@@ -4,3 +4,4 @@ scripts/
 coverage/
 .DS_Store
 *.map
+.mcpregistry_*
