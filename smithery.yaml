@@ -1,0 +1,19 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      rapidApiKey:
+        type: string
+        description: Your RapidAPI subscription key for Scholar Sidekick
+    required:
+      - rapidApiKey
+  commandFunction:
+    |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "scholar-sidekick-mcp@latest"],
+      env: {
+        RAPIDAPI_KEY: config.rapidApiKey,
+      },
+    })

@@ -1,0 +1,55 @@
+{
+  "name": "scholar-sidekick-mcp",
+  "version": "0.3.0",
+  "description": "MCP server for Scholar Sidekick — resolve, format, and export academic citations from any AI assistant",
+  "license": "MIT",
+  "author": "Scholar Sidekick",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlavercombe/scholar-sidekick-mcp.git"
+  },
+  "homepage": "https://scholar-sidekick.com/mcp",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "citations",
+    "bibliography",
+    "doi",
+    "pmid",
+    "bibtex",
+    "ris",
+    "scholar",
+    "academic",
+    "reference-manager"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "scholar-sidekick-mcp": "./dist/mcp-server.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "test:ci": "vitest run --forbid-only",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@vitest/coverage-v8": "^2.1.9",
+    "esbuild": "^0.25.8",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^2.1.9"
+  }
+}
