@@ -1,0 +1,6 @@
+src/
+test/
+scripts/
+coverage/
+.DS_Store
+*.map
