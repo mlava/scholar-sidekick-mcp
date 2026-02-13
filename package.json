@@ -1,6 +1,6 @@
 {
   "name": "scholar-sidekick-mcp",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "mcpName": "io.github.mlava/scholar-sidekick-mcp",
   "description": "MCP server for Scholar Sidekick — resolve, format, and export academic citations from any AI assistant",
   "license": "MIT",
