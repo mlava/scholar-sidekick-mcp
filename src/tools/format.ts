@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { formatCitation } from "../client.js";
 import { FormatCitationInput } from "../types.js";
-import { buildMetadata, errorResult } from "./helpers.js";
+import { buildMetadata, errorResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerFormatTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
     },
     async (input) => {
       const result = await formatCitation(config, {
-        text: input.text,
+        text: normalizeIdentifiers(input.text),
         style: input.style ?? undefined,
         lang: input.lang ?? undefined,
         footnote: input.footnote ?? undefined,

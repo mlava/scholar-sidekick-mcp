@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { formatCitation } from "../client.js";
 import { ResolveIdentifierInput } from "../types.js";
-import { errorResult } from "./helpers.js";
+import { errorResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerResolveTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -18,7 +18,7 @@ export function registerResolveTool(server: McpServer, config: ClientConfig): vo
     },
     async (input) => {
       const result = await formatCitation(config, {
-        text: input.text,
+        text: normalizeIdentifiers(input.text),
         output: "json",
       });
 

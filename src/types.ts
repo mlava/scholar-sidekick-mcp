@@ -6,7 +6,7 @@ export const FormatCitationInput = {
   text: z
     .string()
     .describe(
-      "One or more identifiers (DOIs, PMIDs, ISBNs, arXiv IDs, etc.) separated by newlines",
+      "One or more identifiers (DOIs, PMIDs, ISBNs, arXiv IDs, etc.) separated by newlines or commas",
     ),
   style: z
     .string()
@@ -20,7 +20,7 @@ export const FormatCitationInput = {
 export const ExportCitationInput = {
   text: z
     .string()
-    .describe("One or more identifiers (DOIs, PMIDs, ISBNs, etc.) separated by newlines"),
+    .describe("One or more identifiers (DOIs, PMIDs, ISBNs, etc.) separated by newlines or commas"),
   format: z
     .enum([
       "bib",
@@ -43,7 +43,7 @@ export const ResolveIdentifierInput = {
   text: z
     .string()
     .describe(
-      "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes) separated by newlines",
+      "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes) separated by newlines or commas",
     ),
 };
 

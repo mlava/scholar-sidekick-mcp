@@ -2,6 +2,13 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 import type { ApiResult } from "../types.js";
 
+/** Normalize comma-separated identifiers to newline-separated. */
+export function normalizeIdentifiers(text: string): string {
+  return text.includes(",") && !text.includes("\n")
+    ? text.split(",").map((s) => s.trim()).filter(Boolean).join("\n")
+    : text;
+}
+
 /** Build an MCP error result from a failed API call. */
 export function errorResult(result: ApiResult<unknown>): CallToolResult {
   const parts: string[] = [];
