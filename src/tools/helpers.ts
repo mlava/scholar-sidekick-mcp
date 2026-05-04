@@ -21,6 +21,25 @@ export function errorResult(result: ApiResult<unknown>): CallToolResult {
   };
 }
 
+const MISSING_KEY_MESSAGE = [
+  "Scholar Sidekick is not configured. Set the RAPIDAPI_KEY environment variable to use this tool.",
+  "",
+  "Get a free key:",
+  "  1. Sign up at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
+  "  2. Subscribe to the free tier and copy your RapidAPI key",
+  "  3. Restart this MCP server with RAPIDAPI_KEY set",
+  "",
+  "If you installed via Claude Desktop, open the Scholar Sidekick extension settings and paste the key there.",
+].join("\n");
+
+/** Result returned by every tool when no RAPIDAPI_KEY is configured. */
+export function missingKeyResult(): CallToolResult {
+  return {
+    content: [{ type: "text", text: MISSING_KEY_MESSAGE }],
+    isError: true,
+  };
+}
+
 /** Build a metadata summary from Scholar API response headers. */
 export function buildMetadata(result: ApiResult<unknown>): Record<string, string> {
   const meta: Record<string, string> = {};

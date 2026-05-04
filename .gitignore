@@ -5,3 +5,5 @@ coverage/
 .DS_Store
 .env
 .mcpregistry_*
+*.mcpb
+docs/

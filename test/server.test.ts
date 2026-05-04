@@ -23,7 +23,11 @@ function jsonResponse(body: unknown, status = 200, extra: Record<string, string>
 describe("MCP Server integration", () => {
   it("lists all three tools", async () => {
     const { createMcpServer } = await import("@/server");
-    const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+    const server = createMcpServer({
+      baseUrl: "http://localhost:3000",
+      timeoutMs: 5000,
+      rapidApiKey: "test-key",
+    });
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
@@ -48,7 +52,11 @@ describe("MCP Server integration", () => {
     );
 
     const { createMcpServer } = await import("@/server");
-    const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+    const server = createMcpServer({
+      baseUrl: "http://localhost:3000",
+      timeoutMs: 5000,
+      rapidApiKey: "test-key",
+    });
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
@@ -83,7 +91,11 @@ describe("MCP Server integration", () => {
     );
 
     const { createMcpServer } = await import("@/server");
-    const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+    const server = createMcpServer({
+      baseUrl: "http://localhost:3000",
+      timeoutMs: 5000,
+      rapidApiKey: "test-key",
+    });
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
@@ -110,7 +122,11 @@ describe("MCP Server integration", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true, items }));
 
     const { createMcpServer } = await import("@/server");
-    const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+    const server = createMcpServer({
+      baseUrl: "http://localhost:3000",
+      timeoutMs: 5000,
+      rapidApiKey: "test-key",
+    });
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
@@ -155,7 +171,11 @@ describe("MCP Server integration", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: false, error: "Rate limit exceeded" }, 429));
 
     const { createMcpServer } = await import("@/server");
-    const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+    const server = createMcpServer({
+      baseUrl: "http://localhost:3000",
+      timeoutMs: 5000,
+      rapidApiKey: "test-key",
+    });
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });

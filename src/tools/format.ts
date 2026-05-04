@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { formatCitation } from "../client.js";
 import { FormatCitationInput } from "../types.js";
-import { buildMetadata, errorResult, normalizeIdentifiers } from "./helpers.js";
+import { buildMetadata, errorResult, missingKeyResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerFormatTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -17,6 +17,8 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
       inputSchema: FormatCitationInput,
     },
     async (input) => {
+      if (!config.rapidApiKey) return missingKeyResult();
+
       const result = await formatCitation(config, {
         text: normalizeIdentifiers(input.text),
         style: input.style ?? undefined,

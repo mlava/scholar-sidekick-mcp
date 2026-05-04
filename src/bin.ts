@@ -24,7 +24,15 @@ async function checkConnection(baseUrl: string): Promise<void> {
 
 async function main(): Promise<void> {
   const config = createConfig();
-  await checkConnection(config.baseUrl);
+
+  if (config.rapidApiKey) {
+    await checkConnection(config.baseUrl);
+  } else {
+    process.stderr.write(
+      "Scholar Sidekick MCP started without RAPIDAPI_KEY — tools will return a configuration message until a key is set. " +
+        "Get one at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick\n",
+    );
+  }
 
   const server = createMcpServer(config);
   const transport = new StdioServerTransport();

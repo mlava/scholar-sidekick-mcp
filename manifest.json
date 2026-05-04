@@ -1,0 +1,350 @@
+{
+  "manifest_version": "0.3",
+  "name": "scholar-sidekick-mcp",
+  "display_name": "Scholar Sidekick",
+  "version": "0.4.0",
+  "description": "Resolve, format, and export academic citations from any AI assistant.",
+  "long_description": "Scholar Sidekick MCP resolves identifiers (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcodes) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote, RefWorks, MEDLINE, Zotero RDF, and CSV.",
+  "author": {
+    "name": "Scholar Sidekick",
+    "url": "https://scholar-sidekick.com"
+  },
+  "homepage": "https://scholar-sidekick.com/mcp",
+  "documentation": "https://github.com/mlava/scholar-sidekick-mcp#readme",
+  "support": "https://github.com/mlava/scholar-sidekick-mcp/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mlava/scholar-sidekick-mcp"
+  },
+  "license": "MIT",
+  "privacy_policies": [
+    "https://scholar-sidekick.com/legal/privacy"
+  ],
+  "icon": "icon.png",
+  "keywords": [
+    "citations",
+    "bibliography",
+    "doi",
+    "pmid",
+    "bibtex",
+    "ris",
+    "academic",
+    "scholar",
+    "reference-manager"
+  ],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/mcp-server.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/mcp-server.mjs"],
+      "env": {
+        "RAPIDAPI_KEY": "${user_config.rapidapi_key}",
+        "RAPIDAPI_HOST": "${user_config.rapidapi_host}",
+        "SCHOLAR_SIDEKICK_TIMEOUT_MS": "${user_config.timeout_ms}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "resolveIdentifier",
+      "title": "Resolve Identifier",
+      "description": "Resolve one or more academic identifiers to structured bibliographic metadata in CSL JSON format. Use when the user wants raw reference data (title, authors, journal, year, DOI/PMID/ISBN, etc.) without formatting — e.g. to inspect, transform, or feed into another tool. Accepts DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID, ISBN (with or without hyphens), arXiv ID (with or without 'arXiv:' prefix), ISSN, and ADS bibcodes. Multiple identifiers can be passed in a single call separated by newlines or commas — batch when possible. Returns: a JSON array of CSL items, each with id, type, title, author (array of {family, given}), issued.date-parts, container-title (journal/book), DOI, PMID, PMCID, ISBN, ISSN, URL, and other CSL fields when available. Read-only; no side effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes) separated by newlines or commas"
+          }
+        },
+        "required": ["text"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "description": "Array of resolved bibliographic items in CSL JSON format",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Citation key or identifier"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "CSL item type (e.g. article-journal, book, chapter)"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "Title of the work"
+                },
+                "author": {
+                  "type": "array",
+                  "description": "Authors as CSL name objects",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "family": { "type": "string" },
+                      "given": { "type": "string" }
+                    }
+                  }
+                },
+                "issued": {
+                  "type": "object",
+                  "description": "Publication date in CSL date format",
+                  "properties": {
+                    "date-parts": {
+                      "type": "array",
+                      "items": {
+                        "type": "array",
+                        "items": { "type": "number" }
+                      }
+                    }
+                  }
+                },
+                "container-title": {
+                  "type": "string",
+                  "description": "Journal, book, or container title"
+                },
+                "DOI": { "type": "string" },
+                "PMID": { "type": "string" },
+                "PMCID": { "type": "string" },
+                "ISBN": { "type": "string" },
+                "ISSN": { "type": "string" },
+                "URL": { "type": "string" }
+              }
+            }
+          }
+        },
+        "required": ["items"]
+      },
+      "annotations": {
+        "title": "Resolve Identifier",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "formatCitation",
+      "title": "Format Citation",
+      "description": "Format one or more academic identifiers into a human-readable citation in a specific style. Use when the user wants a finished citation string they can paste into a manuscript, slide, or message — e.g. 'format this DOI in APA' or 'give me a Vancouver citation for PMID:12345'. Accepts the same identifier formats as resolveIdentifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcode), with or without prefixes. Style defaults to Vancouver if not specified — ask the user before defaulting if any ambiguity exists. Supports Vancouver, APA, AMA, IEEE, CSE, Chicago (author-date and notes), Harvard, MLA, Turabian, Nature, BMJ, Lancet, and any of 10,000+ CSL style IDs from the citation-style-language/styles repository. Output defaults to plain text; pass output=html for marked-up HTML or output=json for the structured CSL items. Returns: { text? | html? | items?, styleUsed, formatter, warnings? } — exactly one of text, html, or items will be populated based on the output parameter, plus the resolved style ID and any non-fatal warnings (missing fields, locale fallbacks). Read-only; no side effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more identifiers (DOIs, PMIDs, ISBNs, arXiv IDs, etc.) separated by newlines or commas"
+          },
+          "style": {
+            "type": "string",
+            "description": "Citation style: vancouver (default), ama, apa, ieee, cse, or any CSL style ID"
+          },
+          "lang": {
+            "type": "string",
+            "description": "Locale for formatting (e.g. en-US, en-GB, fr-FR)"
+          },
+          "footnote": {
+            "type": "boolean",
+            "description": "Format as footnotes instead of bibliography entries"
+          },
+          "output": {
+            "type": "string",
+            "enum": ["text", "html", "json"],
+            "description": "Output format (default: text)"
+          }
+        },
+        "required": ["text"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "description": "Formatted citation output. Exactly one of 'text', 'html', or 'items' will be present depending on the requested 'output' format.",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Formatted citation as plain text (when output=text)"
+          },
+          "html": {
+            "type": "string",
+            "description": "Formatted citation as HTML (when output=html)"
+          },
+          "items": {
+            "type": "array",
+            "description": "Structured CSL JSON items (when output=json)",
+            "items": { "type": "object" }
+          },
+          "styleUsed": {
+            "type": "string",
+            "description": "The citation style ID actually applied"
+          },
+          "formatter": {
+            "type": "string",
+            "description": "Backend formatter used to produce the output"
+          },
+          "warnings": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Any non-fatal warnings (e.g. missing fields, locale fallback)"
+          }
+        }
+      },
+      "annotations": {
+        "title": "Format Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "exportCitation",
+      "title": "Export Citation",
+      "description": "Export one or more academic identifiers as a bibliography file in a chosen reference-manager format. Use when the user wants a file they can import into Zotero, Mendeley, EndNote, RefWorks, LaTeX (BibTeX), Excel (CSV), or similar — e.g. 'give me these as BibTeX' or 'export to RIS'. Format parameter is required: 'bib' (BibTeX), 'ris' (RIS), 'csl' (CSL JSON), 'endnote-xml' (EndNote XML), 'endnote-refer' (EndNote Refer/tagged), 'refworks' (RefWorks tagged), 'medline' (NBIB/MEDLINE), 'zotero-rdf' (Zotero RDF), 'csv' (spreadsheet-friendly), or 'txt' (plain-text bibliography rendered with the optional style parameter). Accepts the same identifier formats as resolveIdentifier. Returns: a single string containing the entire bibliography in the requested format, ready to be saved to a file (.bib, .ris, .csv, .xml, .nbib, .rdf, etc.) or pasted into the target tool. Read-only; no side effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "One or more identifiers (DOIs, PMIDs, ISBNs, etc.) separated by newlines or commas"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["bib", "ris", "csv", "csl", "endnote-refer", "endnote-xml", "refworks", "medline", "zotero-rdf", "txt"],
+            "description": "Export format"
+          },
+          "style": {
+            "type": "string",
+            "description": "Citation style (used only for txt export)"
+          },
+          "lang": {
+            "type": "string",
+            "description": "Locale for formatting (e.g. en-US)"
+          }
+        },
+        "required": ["text", "format"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Exported bibliography as a string in the requested format (BibTeX, RIS, CSL JSON, EndNote, RefWorks, MEDLINE, Zotero RDF, CSV, or plain text)"
+          },
+          "format": {
+            "type": "string",
+            "description": "The export format produced"
+          }
+        },
+        "required": ["content"]
+      },
+      "annotations": {
+        "title": "Export Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    }
+  ],
+  "tools_generated": false,
+  "prompts": [
+    {
+      "name": "format",
+      "description": "Format an academic identifier in a specific citation style.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to format (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode)",
+          "required": true
+        },
+        {
+          "name": "style",
+          "description": "Citation style: vancouver, apa, ama, ieee, cse, or any CSL style ID",
+          "required": true
+        }
+      ],
+      "text": "Format ${arguments.identifier} in ${arguments.style} style."
+    },
+    {
+      "name": "export",
+      "description": "Resolve an identifier and export it to a bibliography file format.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to export (DOI, PMID, ISBN, arXiv ID, etc.)",
+          "required": true
+        },
+        {
+          "name": "format",
+          "description": "Export format: bib, ris, csv, csl, endnote-xml, endnote-refer, refworks, medline, zotero-rdf, txt",
+          "required": true
+        }
+      ],
+      "text": "Resolve ${arguments.identifier} and export it as ${arguments.format}."
+    },
+    {
+      "name": "batch_format",
+      "description": "Format multiple identifiers as a bibliography in a single style.",
+      "arguments": [
+        {
+          "name": "identifiers",
+          "description": "Identifiers separated by newlines or commas",
+          "required": true
+        },
+        {
+          "name": "style",
+          "description": "Citation style to apply to all entries",
+          "required": true
+        }
+      ],
+      "text": "Format these references in ${arguments.style} style:\n${arguments.identifiers}"
+    },
+    {
+      "name": "resolve",
+      "description": "Resolve an identifier to structured bibliographic metadata.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to resolve (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode)",
+          "required": true
+        }
+      ],
+      "text": "Resolve ${arguments.identifier} and return the bibliographic metadata as structured JSON."
+    }
+  ],
+  "prompts_generated": false,
+  "user_config": {
+    "rapidapi_key": {
+      "type": "string",
+      "title": "RapidAPI Key",
+      "description": "Your RapidAPI subscription key for Scholar Sidekick. Optional — the server will install and start without one, but every tool call returns a configuration message until a key is set. Get a free key at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
+      "sensitive": true,
+      "required": false
+    },
+    "rapidapi_host": {
+      "type": "string",
+      "title": "RapidAPI Host (advanced)",
+      "description": "Override the default RapidAPI host. Leave blank unless instructed.",
+      "default": "scholar-sidekick.p.rapidapi.com",
+      "required": false
+    },
+    "timeout_ms": {
+      "type": "string",
+      "title": "Request timeout (ms)",
+      "description": "How long to wait for the Scholar Sidekick API before failing. Default 30000.",
+      "default": "30000",
+      "required": false
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["darwin", "win32"],
+    "runtimes": {
+      "node": ">=20.0.0"
+    }
+  }
+}

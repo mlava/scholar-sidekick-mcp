@@ -22,7 +22,11 @@ function jsonResponse(body: unknown, status = 200, extra: Record<string, string>
 
 async function setup() {
   const { createMcpServer } = await import("@/server");
-  const server = createMcpServer({ baseUrl: "http://localhost:3000", timeoutMs: 5000 });
+  const server = createMcpServer({
+    baseUrl: "http://localhost:3000",
+    timeoutMs: 5000,
+    rapidApiKey: "test-key",
+  });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "0.0.1" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);

@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { exportCitation } from "../client.js";
 import { ExportCitationInput } from "../types.js";
-import { errorResult, normalizeIdentifiers } from "./helpers.js";
+import { errorResult, missingKeyResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerExportTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -17,6 +17,8 @@ export function registerExportTool(server: McpServer, config: ClientConfig): voi
       inputSchema: ExportCitationInput,
     },
     async (input) => {
+      if (!config.rapidApiKey) return missingKeyResult();
+
       const result = await exportCitation(config, {
         text: normalizeIdentifiers(input.text),
         format: input.format,

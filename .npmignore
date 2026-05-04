@@ -5,3 +5,6 @@ coverage/
 .DS_Store
 *.map
 .mcpregistry_*
+*.mcpb
+manifest.json
+docs/
