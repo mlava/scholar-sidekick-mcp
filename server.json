@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.mlava/scholar-sidekick-mcp",
-  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch, from any AI assistant.",
+  "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS into 10,000+ CSL styles or 9 export formats.",
   "repository": {
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
