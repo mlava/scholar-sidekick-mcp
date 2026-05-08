@@ -6,12 +6,12 @@ import { registerFormatTool } from "./tools/format.js";
 import { registerResolveTool } from "./tools/resolve.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.4.0";
+export const SERVER_VERSION = "0.4.1";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP turns academic identifiers into clean citations.
 
 When to use this server:
-- The user mentions a bibliographic identifier — DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, or ADS bibcode
+- The user mentions a bibliographic identifier — DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL
 - The user asks to format references in a citation style (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, or any of 10,000+ CSL styles)
 - The user asks to export a bibliography to BibTeX, RIS, EndNote, RefWorks, MEDLINE, Zotero RDF, CSL JSON, or CSV
 

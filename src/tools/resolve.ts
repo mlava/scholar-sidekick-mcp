@@ -12,8 +12,10 @@ export function registerResolveTool(server: McpServer, config: ClientConfig): vo
       title: "Resolve Identifier",
       description:
         "Resolve academic identifiers (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, " +
-        "ISSNs, ADS bibcodes) to structured bibliographic metadata (title, authors, " +
-        "journal, year, identifiers, etc.) without formatting. Returns JSON objects.",
+        "ISSNs, ADS bibcodes, WHO IRIS URLs) to structured bibliographic metadata " +
+        "(title, authors, journal, year, identifiers, etc.) without formatting. " +
+        "Accepts a single identifier or a comma/newline-separated batch. " +
+        "Returns JSON objects.",
       inputSchema: ResolveIdentifierInput,
     },
     async (input) => {

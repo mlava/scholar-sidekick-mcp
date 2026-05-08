@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.4.0",
-  "description": "Resolve, format, and export academic citations from any AI assistant.",
-  "long_description": "Scholar Sidekick MCP resolves identifiers (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcodes) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote, RefWorks, MEDLINE, Zotero RDF, and CSV.",
+  "version": "0.4.1",
+  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
+  "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. Every tool accepts a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
   "author": {
     "name": "Scholar Sidekick",
     "url": "https://scholar-sidekick.com"
@@ -24,12 +24,22 @@
   "keywords": [
     "citations",
     "bibliography",
-    "doi",
-    "pmid",
-    "bibtex",
-    "ris",
     "academic",
     "scholar",
+    "doi",
+    "pmid",
+    "pmcid",
+    "isbn",
+    "arxiv",
+    "issn",
+    "ads-bibcode",
+    "who-iris",
+    "bibtex",
+    "ris",
+    "csl",
+    "endnote",
+    "zotero",
+    "crossref",
     "reference-manager"
   ],
   "server": {
@@ -49,13 +59,13 @@
     {
       "name": "resolveIdentifier",
       "title": "Resolve Identifier",
-      "description": "Resolve one or more academic identifiers to structured bibliographic metadata in CSL JSON format. Use when the user wants raw reference data (title, authors, journal, year, DOI/PMID/ISBN, etc.) without formatting — e.g. to inspect, transform, or feed into another tool. Accepts DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID, ISBN (with or without hyphens), arXiv ID (with or without 'arXiv:' prefix), ISSN, and ADS bibcodes. Multiple identifiers can be passed in a single call separated by newlines or commas — batch when possible. Returns: a JSON array of CSL items, each with id, type, title, author (array of {family, given}), issued.date-parts, container-title (journal/book), DOI, PMID, PMCID, ISBN, ISSN, URL, and other CSL fields when available. Read-only; no side effects.",
+      "description": "Resolve one or more academic identifiers to structured bibliographic metadata in CSL JSON format. Use when the user wants raw reference data (title, authors, journal, year, DOI/PMID/ISBN, etc.) without formatting — e.g. to inspect, transform, or feed into another tool. Accepts DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID, ISBN (with or without hyphens), arXiv ID (with or without 'arXiv:' prefix), ISSN, ADS bibcodes, and WHO IRIS URLs. Multiple identifiers can be passed in a single call separated by newlines or commas — batch when possible. Returns: a JSON array of CSL items, each with id, type, title, author (array of {family, given}), issued.date-parts, container-title (journal/book), DOI, PMID, PMCID, ISBN, ISSN, URL, and other CSL fields when available. Read-only; no side effects.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes) separated by newlines or commas"
+            "description": "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes, WHO IRIS URLs) separated by newlines or commas"
           }
         },
         "required": ["text"]
@@ -132,7 +142,7 @@
     {
       "name": "formatCitation",
       "title": "Format Citation",
-      "description": "Format one or more academic identifiers into a human-readable citation in a specific style. Use when the user wants a finished citation string they can paste into a manuscript, slide, or message — e.g. 'format this DOI in APA' or 'give me a Vancouver citation for PMID:12345'. Accepts the same identifier formats as resolveIdentifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcode), with or without prefixes. Style defaults to Vancouver if not specified — ask the user before defaulting if any ambiguity exists. Supports Vancouver, APA, AMA, IEEE, CSE, Chicago (author-date and notes), Harvard, MLA, Turabian, Nature, BMJ, Lancet, and any of 10,000+ CSL style IDs from the citation-style-language/styles repository. Output defaults to plain text; pass output=html for marked-up HTML or output=json for the structured CSL items. Returns: { text? | html? | items?, styleUsed, formatter, warnings? } — exactly one of text, html, or items will be populated based on the output parameter, plus the resolved style ID and any non-fatal warnings (missing fields, locale fallbacks). Read-only; no side effects.",
+      "description": "Format one or more academic identifiers into a human-readable citation in a specific style. Use when the user wants a finished citation string they can paste into a manuscript, slide, or message — e.g. 'format this DOI in APA' or 'give me a Vancouver citation for PMID:12345'. Accepts the same identifier formats as resolveIdentifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcode, WHO IRIS URL), with or without prefixes. Style defaults to Vancouver if not specified — ask the user before defaulting if any ambiguity exists. Supports Vancouver, APA, AMA, IEEE, CSE, Chicago (author-date and notes), Harvard, MLA, Turabian, Nature, BMJ, Lancet, and any of 10,000+ CSL style IDs from the citation-style-language/styles repository. Output defaults to plain text; pass output=html for marked-up HTML or output=json for the structured CSL items. Returns: { text? | html? | items?, styleUsed, formatter, warnings? } — exactly one of text, html, or items will be populated based on the output parameter, plus the resolved style ID and any non-fatal warnings (missing fields, locale fallbacks). Read-only; no side effects.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -258,7 +268,7 @@
       "arguments": [
         {
           "name": "identifier",
-          "description": "Identifier to format (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode)",
+          "description": "Identifier to format (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, WHO IRIS URL)",
           "required": true
         },
         {
@@ -309,7 +319,7 @@
       "arguments": [
         {
           "name": "identifier",
-          "description": "Identifier to resolve (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode)",
+          "description": "Identifier to resolve (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, WHO IRIS URL)",
           "required": true
         }
       ],

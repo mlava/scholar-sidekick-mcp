@@ -11,9 +11,11 @@ export function registerExportTool(server: McpServer, config: ClientConfig): voi
     {
       title: "Export Citation",
       description:
-        "Export academic citations to bibliography file formats: " +
+        "Export academic citations from identifiers (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, " +
+        "ISSNs, ADS bibcodes, WHO IRIS URLs) to bibliography file formats: " +
         "BibTeX (.bib), RIS, CSV, CSL-JSON, EndNote XML, EndNote Refer, " +
-        "RefWorks, MEDLINE/NBIB, Zotero RDF, or plain text.",
+        "RefWorks, MEDLINE/NBIB, Zotero RDF, or plain text. " +
+        "Accepts a single identifier or a comma/newline-separated batch.",
       inputSchema: ExportCitationInput,
     },
     async (input) => {

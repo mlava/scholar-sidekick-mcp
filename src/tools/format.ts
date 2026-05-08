@@ -11,8 +11,11 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
     {
       title: "Format Citation",
       description:
-        "Format academic citations from identifiers (DOIs, PMIDs, ISBNs, arXiv IDs, etc.) " +
-        "into a specific citation style. Returns formatted text, HTML, or structured JSON. " +
+        "Format academic citations from identifiers (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, " +
+        "ISSNs, ADS bibcodes, WHO IRIS URLs) into a specific citation style. " +
+        "Accepts a single identifier or a comma/newline-separated batch. " +
+        "Returns formatted text, HTML, or structured JSON, plus a provenance metadata block " +
+        "(formatter, styleUsed, requestId, warnings). " +
         "Supports Vancouver, AMA, APA, IEEE, CSE, and 10,000+ CSL styles.",
       inputSchema: FormatCitationInput,
     },
