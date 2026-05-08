@@ -158,3 +158,5 @@ npm run typecheck
 ## License
 
 MIT
+
+[![MCP Badge](https://lobehub.com/badge/mcp/mlavercombe-scholar-sidekick-mcp)](https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp)
