@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 import { type ClientConfig, createConfig } from "./client.js";
+import { registerPrompts } from "./prompts.js";
+import { registerResources } from "./resources.js";
 import { registerExportTool } from "./tools/export.js";
 import { registerFormatTool } from "./tools/format.js";
 import { registerResolveTool } from "./tools/resolve.js";
@@ -41,6 +43,8 @@ export function createMcpServer(config?: ClientConfig): McpServer {
   registerFormatTool(server, cfg);
   registerExportTool(server, cfg);
   registerResolveTool(server, cfg);
+  registerPrompts(server);
+  registerResources(server);
 
   return server;
 }

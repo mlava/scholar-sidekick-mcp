@@ -327,6 +327,30 @@
     }
   ],
   "prompts_generated": false,
+  "resources": [
+    {
+      "name": "supported-identifiers",
+      "uri": "scholar-sidekick://identifiers",
+      "title": "Supported Identifier Types",
+      "description": "Reference table of the 8 scholarly identifier types Scholar Sidekick MCP can resolve (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL), with example formats and notes on prefix tolerance.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "supported-styles",
+      "uri": "scholar-sidekick://styles",
+      "title": "Supported Citation Styles",
+      "description": "Reference table of citation styles supported by formatCitation: 5 hand-tuned builtins (Vancouver, AMA, APA, IEEE, CSE) plus a starter list of common CSL style IDs (Chicago, Harvard, MLA, Nature, BMJ, Lancet, etc.) — 10,000+ available.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "supported-formats",
+      "uri": "scholar-sidekick://formats",
+      "title": "Supported Export Formats",
+      "description": "Reference table of the 10 export formats supported by exportCitation (BibTeX, RIS, CSL JSON, EndNote XML/Refer, RefWorks, MEDLINE/NBIB, Zotero RDF, CSV, plain text), with picking guidance per common workflow.",
+      "mimeType": "text/markdown"
+    }
+  ],
+  "resources_generated": false,
   "user_config": {
     "rapidapi_key": {
       "type": "string",
