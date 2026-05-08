@@ -8,7 +8,7 @@ import { registerFormatTool } from "./tools/format.js";
 import { registerResolveTool } from "./tools/resolve.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.4.1";
+export const SERVER_VERSION = "0.5.0";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP turns academic identifiers into clean citations.
 
