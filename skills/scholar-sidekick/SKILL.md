@@ -55,7 +55,7 @@ For `exportCitation`, the `format` parameter accepts: `bib` (BibTeX), `ris`, `cs
 
 ## When NOT to Use This Skill
 
-- **Searching for papers by topic or keyword** — use a Semantic Scholar MCP wrapper for *literature discovery*. Scholar Sidekick assumes you already have an identifier.
+- **Searching for papers by topic or keyword, or traversing citation networks** — use a Semantic Scholar or OpenAlex MCP wrapper for *literature discovery*. Scholar Sidekick assumes you already have an identifier.
 - **Reading or editing a Zotero library** — use `zotero-mcp` for stateful library access (search, annotate, manage collections).
 - **Repairing references inside a manuscript file** (`.tex`, `.bib`, `.md`, `.docx`) — use `citecheck` for that workflow.
 - **Importing as a Python library inside a pipeline** — use `OneCite`. Scholar Sidekick is MCP-only on the install side.
