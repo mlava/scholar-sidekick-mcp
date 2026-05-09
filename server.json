@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.mlava/scholar-sidekick-mcp",
-  "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS into 10,000+ CSL styles or 9 export formats.",
+  "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS into citations, exports, retraction + OA.",
   "repository": {
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.5.0",
+  "version": "0.6.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "transport": {
         "type": "stdio"
       },

@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.5.0",
-  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
-  "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. Every tool accepts a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
+  "version": "0.6.0",
+  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch, plus retraction and open-access checks.",
+  "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The format/export/resolve tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Two single-identifier checks complete the picture: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
   "author": {
     "name": "Scholar Sidekick",
     "url": "https://scholar-sidekick.com"
@@ -40,7 +40,11 @@
     "endnote",
     "zotero",
     "crossref",
-    "reference-manager"
+    "reference-manager",
+    "retraction",
+    "retraction-watch",
+    "open-access",
+    "unpaywall"
   ],
   "server": {
     "type": "node",
@@ -258,6 +262,152 @@
         "idempotentHint": true,
         "openWorldHint": true
       }
+    },
+    {
+      "name": "checkRetraction",
+      "title": "Check Retraction",
+      "description": "Check whether a single work has been retracted, corrected, or had an expression of concern raised. Sourced from Crossref `updated-by` (Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup. Single identifier only — this tool does not accept batched input. Returns: { doi, resolvedFrom?, reason?, result } where result has isRetracted, hasCorrections, hasConcern (booleans), notices (array of {type, label, doi, date, source}), and title. doi is null when no DOI could be resolved (e.g. an ISBN), in which case reason is 'no_doi' and result is null. Read-only; no side effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A single identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). 1–500 characters.",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": ["id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "doi": {
+            "type": ["string", "null"],
+            "description": "The DOI used for the lookup, or null when no DOI could be resolved"
+          },
+          "resolvedFrom": {
+            "type": "object",
+            "description": "Original input identifier when it was not already a DOI",
+            "properties": {
+              "type": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason code when result is null (e.g. 'no_doi')"
+          },
+          "result": {
+            "type": ["object", "null"],
+            "properties": {
+              "isRetracted": { "type": "boolean" },
+              "hasCorrections": { "type": "boolean" },
+              "hasConcern": { "type": "boolean" },
+              "notices": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": { "type": "string" },
+                    "label": { "type": "string" },
+                    "doi": { "type": "string" },
+                    "date": { "type": "string" },
+                    "source": { "type": "string" }
+                  }
+                }
+              },
+              "title": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "required": ["doi", "result"]
+      },
+      "annotations": {
+        "title": "Check Retraction",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "checkOpenAccess",
+      "title": "Check Open Access",
+      "description": "Check whether a single work is openly accessible and where to find the best legal version. Sourced from Unpaywall. Returns OA status (gold/green/hybrid/bronze/closed), the best landing or PDF URL, license, and version when available. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup. Single identifier only — this tool does not accept batched input. Returns: { doi, resolvedFrom?, reason?, result } where result has isOa (boolean), oaStatus, title, bestLocation ({url, hostType, license, version} or null), and locations (array of the same shape). doi is null when no DOI could be resolved (e.g. an ISBN), in which case reason is 'no_doi' and result is null. Read-only; no side effects.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A single identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). 1–500 characters.",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": ["id"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "doi": {
+            "type": ["string", "null"],
+            "description": "The DOI used for the lookup, or null when no DOI could be resolved"
+          },
+          "resolvedFrom": {
+            "type": "object",
+            "description": "Original input identifier when it was not already a DOI",
+            "properties": {
+              "type": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason code when result is null (e.g. 'no_doi')"
+          },
+          "result": {
+            "type": ["object", "null"],
+            "properties": {
+              "isOa": { "type": "boolean" },
+              "oaStatus": {
+                "type": "string",
+                "enum": ["gold", "green", "hybrid", "bronze", "closed"]
+              },
+              "title": { "type": ["string", "null"] },
+              "bestLocation": {
+                "type": ["object", "null"],
+                "properties": {
+                  "url": { "type": "string" },
+                  "hostType": { "type": "string" },
+                  "license": { "type": "string" },
+                  "version": { "type": "string" }
+                }
+              },
+              "locations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "url": { "type": "string" },
+                    "hostType": { "type": "string" },
+                    "license": { "type": "string" },
+                    "version": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": ["doi", "result"]
+      },
+      "annotations": {
+        "title": "Check Open Access",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
     }
   ],
   "tools_generated": false,
@@ -324,6 +474,30 @@
         }
       ],
       "text": "Resolve ${arguments.identifier} and return the bibliographic metadata as structured JSON."
+    },
+    {
+      "name": "retraction",
+      "description": "Check whether a paper has been retracted, corrected, or had an expression of concern raised.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Check whether ${arguments.identifier} has been retracted, corrected, or had an expression of concern raised."
+    },
+    {
+      "name": "open_access",
+      "description": "Check whether a paper is open access and find the best legal copy.",
+      "arguments": [
+        {
+          "name": "identifier",
+          "description": "Identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Check whether ${arguments.identifier} is open access and report the best legal landing or PDF URL."
     }
   ],
   "prompts_generated": false,

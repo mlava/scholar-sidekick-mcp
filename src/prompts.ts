@@ -105,4 +105,57 @@ export function registerPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "retraction",
+    {
+      title: "Check Retraction",
+      description:
+        "Check whether a paper has been retracted, corrected, or had an expression of concern raised.",
+      argsSchema: {
+        identifier: z
+          .string()
+          .describe(
+            "Identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). Single identifier only.",
+          ),
+      },
+    },
+    ({ identifier }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Check whether ${identifier} has been retracted, corrected, or had an expression of concern raised. Use the checkRetraction tool from the scholar-sidekick MCP server. Report the retraction status (isRetracted/hasCorrections/hasConcern), the resolved DOI, and any notices found (sourced from Crossref / Retraction Watch).`,
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "open_access",
+    {
+      title: "Check Open Access",
+      description: "Check whether a paper is open access and find the best legal copy.",
+      argsSchema: {
+        identifier: z
+          .string()
+          .describe(
+            "Identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). Single identifier only.",
+          ),
+      },
+    },
+    ({ identifier }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Check whether ${identifier} is open access using the checkOpenAccess tool from the scholar-sidekick MCP server. Report the OA status (gold/green/hybrid/bronze/closed) and, when available, the best landing or PDF URL with its license and version (sourced from Unpaywall).`,
+          },
+        },
+      ],
+    }),
+  );
 }

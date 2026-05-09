@@ -47,6 +47,26 @@ export const ResolveIdentifierInput = {
     ),
 };
 
+export const CheckRetractionInput = {
+  id: z
+    .string()
+    .min(1)
+    .max(500)
+    .describe(
+      "A single identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). Non-DOI inputs are resolved to a DOI before lookup. Single identifier only — this tool does not accept batches.",
+    ),
+};
+
+export const CheckOpenAccessInput = {
+  id: z
+    .string()
+    .min(1)
+    .max(500)
+    .describe(
+      "A single identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). Non-DOI inputs are resolved to a DOI before lookup. Single identifier only — this tool does not accept batches.",
+    ),
+};
+
 /* ─── API response types ──────────────────────────────────────────────── */
 
 export interface FormatApiResponse {
@@ -60,6 +80,60 @@ export interface FormatApiResponse {
   warnings?: string[];
   error?: string;
   code?: string;
+}
+
+export interface ResolvedFrom {
+  type: string;
+  value: string;
+}
+
+export interface RetractionNotice {
+  type: string;
+  label?: string;
+  doi?: string;
+  date?: string;
+  source?: string;
+}
+
+export interface RetractionResult {
+  isRetracted: boolean;
+  hasCorrections: boolean;
+  hasConcern: boolean;
+  notices: RetractionNotice[];
+  title: string | null;
+}
+
+export interface RetractionApiResponse {
+  ok: boolean;
+  doi: string | null;
+  resolvedFrom?: ResolvedFrom;
+  reason?: string;
+  result: RetractionResult | null;
+  error?: string;
+}
+
+export interface OaLocation {
+  url: string;
+  hostType?: string;
+  license?: string;
+  version?: string;
+}
+
+export interface OaResult {
+  isOa: boolean;
+  oaStatus: "gold" | "green" | "hybrid" | "bronze" | "closed";
+  title: string | null;
+  bestLocation: OaLocation | null;
+  locations: OaLocation[];
+}
+
+export interface OaApiResponse {
+  ok: boolean;
+  doi: string | null;
+  resolvedFrom?: ResolvedFrom;
+  reason?: string;
+  result: OaResult | null;
+  error?: string;
 }
 
 export interface ApiResult<T> {

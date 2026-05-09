@@ -21,7 +21,7 @@ function jsonResponse(body: unknown, status = 200, extra: Record<string, string>
 }
 
 describe("MCP Server integration", () => {
-  it("lists all three tools", async () => {
+  it("lists all five tools", async () => {
     const { createMcpServer } = await import("@/server");
     const server = createMcpServer({
       baseUrl: "http://localhost:3000",
@@ -36,7 +36,13 @@ describe("MCP Server integration", () => {
 
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
-    expect(names).toEqual(["exportCitation", "formatCitation", "resolveIdentifier"]);
+    expect(names).toEqual([
+      "checkOpenAccess",
+      "checkRetraction",
+      "exportCitation",
+      "formatCitation",
+      "resolveIdentifier",
+    ]);
 
     await client.close();
     await server.close();
@@ -160,7 +166,7 @@ describe("MCP Server integration", () => {
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(3);
+    expect(tools).toHaveLength(5);
 
     await client.close();
     await server.close();

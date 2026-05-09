@@ -1,13 +1,14 @@
 # Scholar Sidekick MCP Server
 
-[MCP](https://modelcontextprotocol.io) server for [Scholar Sidekick](https://scholar-sidekick.com) — resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) into 10,000+ CSL styles or nine export formats, single or batch, from any AI assistant.
+[MCP](https://modelcontextprotocol.io) server for [Scholar Sidekick](https://scholar-sidekick.com) — resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) into 10,000+ CSL styles or nine export formats, plus retraction and open-access checks, from any AI assistant.
 
 ## Highlights
 
 - **Eight identifier types out of the box** — DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, NASA ADS bibcodes, and WHO IRIS URLs (rare in citation tooling).
-- **Batch-friendly** — every tool accepts a single identifier or a comma- or newline-separated list; the server normalises the list and resolves them in one round trip.
+- **Batch-friendly resolve / format / export** — each accepts a single identifier or a comma- or newline-separated list; the server normalises the list and resolves them in one round trip.
 - **10,000+ citation styles** — five hand-tuned builtins (Vancouver, AMA, APA, IEEE, CSE) plus any [CSL style ID](https://github.com/citation-style-language/styles), with alias and dependent-style resolution.
 - **Nine export formats** — BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, CSV, plain text.
+- **Retraction & open-access checks** — `checkRetraction` surfaces retractions, corrections, and expressions of concern (Crossref / Retraction Watch); `checkOpenAccess` returns OA status and the best legal landing or PDF URL (Unpaywall). Both accept any identifier type and resolve it to a DOI under the hood.
 - **Composable workflow** — chain `resolveIdentifier` → `formatCitation` → `exportCitation` in one prompt for an end-to-end "raw IDs → exportable bibliography" pipeline.
 - **Provenance metadata on every response** — formatted output is followed by a metadata block (`requestId`, `formatter`, `styleUsed`, `warnings`) so the assistant can show users *which* engine produced each citation.
 - **REST API twin** — the same RapidAPI key works against the [Scholar Sidekick REST API](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) for non-MCP integrations.
@@ -19,6 +20,8 @@
 | **resolveIdentifier** | Resolve DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes, and WHO IRIS URLs to structured bibliographic metadata (CSL JSON). Accepts a single identifier or a comma/newline-separated batch. |
 | **formatCitation** | Format one or many identifiers into Vancouver, AMA, APA, IEEE, CSE, or any of 10,000+ CSL styles. Output as text, HTML, or JSON. Returns formatted citations plus a provenance metadata block. |
 | **exportCitation** | Export one or many identifiers to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, CSV, or plain text — ready to write to disk or hand to a reference manager. |
+| **checkRetraction** | Check whether a single work has been retracted, corrected, or had an expression of concern raised. Sourced from Crossref `updated-by` (Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup. One identifier per call. |
+| **checkOpenAccess** | Check whether a single work is openly accessible and where to find the best legal version. Sourced from Unpaywall. Returns OA status (gold/green/hybrid/bronze/closed), best landing/PDF URL, license, and version. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup. One identifier per call. |
 
 ## Setup
 
@@ -119,6 +122,12 @@ Once connected, ask your AI assistant:
 
 - "Resolve these three identifiers, format each in AMA, and export the set as BibTeX: 10.1056/NEJMoa2033700, PMID:30049270, ISBN:9780192854087"
 - "Build me a Nature-style bibliography from this list and give me a `.bib` file at the end: PMID:30049270, arXiv:2301.08745, 10.1038/s41586-021-03819-2"
+
+**Retraction & open-access checks** (one identifier per call)
+
+- "Has 10.1016/S0140-6736(20)31180-6 been retracted?" → returns `isRetracted: true` with the retraction notice and date
+- "Is the NumPy paper (10.1038/s41586-020-2649-2) open access? Where can I read it for free?" → returns OA status plus the best legal PDF URL with license and version
+- "Check whether arXiv:2301.08745 has any corrections or expressions of concern." → resolves arXiv → DOI, then queries Retraction Watch
 
 ## Supported Identifiers
 

@@ -35,13 +35,20 @@ describe("MCP Server prompts", () => {
     if (cleanup) await cleanup();
   });
 
-  it("lists all four prompts", async () => {
+  it("lists all six prompts", async () => {
     const { client, close } = await withClient();
     cleanup = close;
 
     const { prompts } = await client.listPrompts();
     const names = prompts.map((p) => p.name).sort();
-    expect(names).toEqual(["batch_format", "export", "format", "resolve"]);
+    expect(names).toEqual([
+      "batch_format",
+      "export",
+      "format",
+      "open_access",
+      "resolve",
+      "retraction",
+    ]);
   });
 
   it("format prompt interpolates identifier and style", async () => {
@@ -109,6 +116,34 @@ describe("MCP Server prompts", () => {
     const content = result.messages[0].content as { type: string; text: string };
     expect(content.text).toContain("arXiv:2301.08745");
     expect(content.text).toContain("resolveIdentifier");
+  });
+
+  it("retraction prompt interpolates identifier", async () => {
+    const { client, close } = await withClient();
+    cleanup = close;
+
+    const result = await client.getPrompt({
+      name: "retraction",
+      arguments: { identifier: "10.1016/S0140-6736(20)31180-6" },
+    });
+
+    const content = result.messages[0].content as { type: string; text: string };
+    expect(content.text).toContain("10.1016/S0140-6736(20)31180-6");
+    expect(content.text).toContain("checkRetraction");
+  });
+
+  it("open_access prompt interpolates identifier", async () => {
+    const { client, close } = await withClient();
+    cleanup = close;
+
+    const result = await client.getPrompt({
+      name: "open_access",
+      arguments: { identifier: "10.1038/s41586-020-2649-2" },
+    });
+
+    const content = result.messages[0].content as { type: string; text: string };
+    expect(content.text).toContain("10.1038/s41586-020-2649-2");
+    expect(content.text).toContain("checkOpenAccess");
   });
 
   it("each prompt has a title and description in the listing", async () => {

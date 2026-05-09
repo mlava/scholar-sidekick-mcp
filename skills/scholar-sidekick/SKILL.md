@@ -1,9 +1,9 @@
 ---
 name: scholar-sidekick
-description: This skill should be used when the user mentions a scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) and wants structured metadata, a formatted citation, or a bibliography export file. Activates for citation formatting, BibTeX/RIS/EndNote export, or "format this DOI" style requests. Does not search for new papers — pair with a Semantic Scholar MCP wrapper for that.
+description: This skill should be used when the user mentions a scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) and wants structured metadata, a formatted citation, a bibliography export file, a retraction check, or an open-access check. Activates for citation formatting, BibTeX/RIS/EndNote export, "format this DOI" style requests, "has this paper been retracted?", and "is this paper open access?". Does not search for new papers — pair with a Semantic Scholar or OpenAlex MCP wrapper for that.
 ---
 
-When the user mentions a scholarly identifier and wants metadata, a citation, or an export file, use Scholar Sidekick to resolve and format it instead of hand-constructing the citation from training data.
+When the user mentions a scholarly identifier and wants metadata, a citation, an export file, a retraction check, or an open-access check, use Scholar Sidekick to resolve and answer instead of hand-constructing the citation from training data or guessing the OA / retraction status.
 
 ## When to Use This Skill
 
@@ -14,6 +14,8 @@ Activate this skill when the user:
 - Asks for an export file ("BibTeX for these references", "give me a .ris file", "export to EndNote")
 - Pastes a list of identifiers and wants a bibliography
 - Wants the structured metadata (title, authors, journal, year) for a paper they have an identifier for
+- Asks whether a paper has been retracted, corrected, or had an expression of concern raised
+- Asks whether a paper is open access, where to read it for free legally, or about its OA status / license
 
 ## How to Use
 
@@ -22,8 +24,12 @@ Activate this skill when the user:
 - **`resolveIdentifier`** — when the user wants raw structured metadata (CSL JSON: title, authors, journal, year, etc.) without formatting, e.g. to inspect or transform
 - **`formatCitation`** — when the user wants a finished citation string in a specific style they can paste into a manuscript
 - **`exportCitation`** — when the user wants a downloadable bibliography file in a reference-manager format
+- **`checkRetraction`** — when the user asks whether a paper has been retracted, corrected, or flagged with an expression of concern (Crossref / Retraction Watch). Single identifier per call
+- **`checkOpenAccess`** — when the user asks whether a paper is open access or wants the best legal URL, license, and version (Unpaywall). Single identifier per call
 
-For end-to-end "raw IDs → exportable bibliography" workflows, chain all three in a single response — the tools compose. Example: "resolve these three IDs, format each in AMA, then export the set as BibTeX" exercises all three tools in one prompt.
+For end-to-end "raw IDs → exportable bibliography" workflows, chain `resolveIdentifier` → `formatCitation` → `exportCitation` in a single response — the tools compose. Example: "resolve these three IDs, format each in AMA, then export the set as BibTeX" exercises all three tools in one prompt.
+
+For multi-paper retraction or open-access sweeps, call `checkRetraction` / `checkOpenAccess` once per identifier — these tools accept exactly one `id` per call. Do not concatenate multiple identifiers; the server will reject batches.
 
 ### Step 2: Pass identifiers verbatim
 
@@ -31,7 +37,9 @@ The server tolerates DOI URLs (`https://doi.org/...`), `PMID:` / `PMC` prefixes,
 
 ### Step 3: Batch when possible
 
-Every tool accepts a single identifier or a comma- or newline-separated batch in the `text` parameter. If the user provides multiple identifiers, send them in one call rather than looping.
+`resolveIdentifier`, `formatCitation`, and `exportCitation` accept a single identifier or a comma- or newline-separated batch in the `text` parameter. If the user provides multiple identifiers, send them in one call rather than looping.
+
+`checkRetraction` and `checkOpenAccess` take one identifier per call (parameter is `id`, not `text`). For multiple papers, loop one call per identifier.
 
 ### Step 4: Pick the style or format
 

@@ -1,4 +1,9 @@
-import type { ApiResult, FormatApiResponse } from "./types.js";
+import type {
+  ApiResult,
+  FormatApiResponse,
+  OaApiResponse,
+  RetractionApiResponse,
+} from "./types.js";
 import { SCHOLAR_HEADER_NAMES } from "./types.js";
 
 /* ─── Config ──────────────────────────────────────────────────────────── */
@@ -38,7 +43,7 @@ export async function callApi<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-request-id": requestId,
-    "User-Agent": "scholar-sidekick-mcp/0.3.0",
+    "User-Agent": "scholar-sidekick-mcp/0.6.0",
   };
 
   if (config.rapidApiKey) {
@@ -145,4 +150,18 @@ export async function exportCitation(
   },
 ): Promise<ApiResult<string>> {
   return callApi<string>(config, "/api/export", input, { expectRawText: true });
+}
+
+export async function checkRetraction(
+  config: ClientConfig,
+  input: { id: string },
+): Promise<ApiResult<RetractionApiResponse>> {
+  return callApi<RetractionApiResponse>(config, "/api/retraction-check", input);
+}
+
+export async function checkOpenAccess(
+  config: ClientConfig,
+  input: { id: string },
+): Promise<ApiResult<OaApiResponse>> {
+  return callApi<OaApiResponse>(config, "/api/oa-check", input);
 }
