@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch, plus retraction and open-access checks.",
   "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The format/export/resolve tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Two single-identifier checks complete the picture: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
   "author": {
@@ -63,13 +63,13 @@
     {
       "name": "resolveIdentifier",
       "title": "Resolve Identifier",
-      "description": "Resolve one or more academic identifiers to structured bibliographic metadata in CSL JSON format. Use when the user wants raw reference data (title, authors, journal, year, DOI/PMID/ISBN, etc.) without formatting — e.g. to inspect, transform, or feed into another tool. Accepts DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID, ISBN (with or without hyphens), arXiv ID (with or without 'arXiv:' prefix), ISSN, ADS bibcodes, and WHO IRIS URLs. Multiple identifiers can be passed in a single call separated by newlines or commas — batch when possible. Returns: a JSON array of CSL items, each with id, type, title, author (array of {family, given}), issued.date-parts, container-title (journal/book), DOI, PMID, PMCID, ISBN, ISSN, URL, and other CSL fields when available. Read-only; no side effects.",
+      "description": "Resolve scholarly identifiers to structured CSL JSON metadata (title, authors, journal, year, identifiers). Use when the user wants raw bibliographic data to inspect, transform, or feed into another tool — not a formatted citation. Accepts DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, NASA ADS bibcode, or WHO IRIS URL, with or without prefixes (PMID:, arXiv:, ISBN hyphens, https://doi.org/...). Pass a single identifier or a comma/newline-separated batch — one round trip per call. Returns: a JSON array of CSL items, each with id, type, title, author[], issued.date-parts, container-title, DOI/PMID/PMCID/ISBN/ISSN/URL when available. Use formatCitation instead when the user wants a finished citation string in a specific style; use exportCitation when they want a downloadable bibliography file. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); without it the tool returns an isError configuration message. Rate limits follow the user's RapidAPI subscription plan; the underlying REST API caches repeated identical requests and surfaces cache state in the x-scholar-cache response header.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more identifiers to resolve (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes, WHO IRIS URLs) separated by newlines or commas"
+            "description": "One or more scholarly identifiers to resolve. Accepts DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
           }
         },
         "required": ["text"]
@@ -146,30 +146,30 @@
     {
       "name": "formatCitation",
       "title": "Format Citation",
-      "description": "Format one or more academic identifiers into a human-readable citation in a specific style. Use when the user wants a finished citation string they can paste into a manuscript, slide, or message — e.g. 'format this DOI in APA' or 'give me a Vancouver citation for PMID:12345'. Accepts the same identifier formats as resolveIdentifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS bibcode, WHO IRIS URL), with or without prefixes. Style defaults to Vancouver if not specified — ask the user before defaulting if any ambiguity exists. Supports Vancouver, APA, AMA, IEEE, CSE, Chicago (author-date and notes), Harvard, MLA, Turabian, Nature, BMJ, Lancet, and any of 10,000+ CSL style IDs from the citation-style-language/styles repository. Output defaults to plain text; pass output=html for marked-up HTML or output=json for the structured CSL items. Returns: { text? | html? | items?, styleUsed, formatter, warnings? } — exactly one of text, html, or items will be populated based on the output parameter, plus the resolved style ID and any non-fatal warnings (missing fields, locale fallbacks). Read-only; no side effects.",
+      "description": "Format scholarly identifiers into a finished citation in a specific style. Use when the user wants a paste-ready citation string for a manuscript, slide, message, footnote, or in-line reference. Style defaults to vancouver if unspecified; ask the user before defaulting if any ambiguity exists (e.g. 'Harvard' and 'Chicago' have multiple variants — confirm which one). Supports five hand-tuned builtins (vancouver, ama, apa, ieee, cse) plus any of 10,000+ CSL style IDs (chicago-author-date, harvard-cite-them-right, modern-language-association, nature, bmj, the-lancet, etc.). Alias and dependent-style resolution apply, so 'harvard' resolves to 'harvard-cite-them-right' and the canonical ID is reported back as styleUsed. Output defaults to text; pass output=html for marked-up HTML or output=json for structured CSL items. Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. Returns: one of { text, html, items } depending on the output parameter, followed by a metadata block ({formatter: 'builtin' | 'csl', styleUsed, requestId, warnings?}) appended as a second text content item — surface this to the user when they care about reproducibility. Use resolveIdentifier instead when the user wants raw metadata to inspect or transform; use exportCitation when they want a downloadable bibliography file. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); without it the tool returns an isError configuration message. Rate limits follow the user's RapidAPI subscription plan.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more identifiers (DOIs, PMIDs, ISBNs, arXiv IDs, etc.) separated by newlines or commas"
+            "description": "One or more scholarly identifiers to format. Same vocabulary as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated). Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported."
           },
           "style": {
             "type": "string",
-            "description": "Citation style: vancouver (default), ama, apa, ieee, cse, or any CSL style ID"
+            "description": "Citation style: 'vancouver' (default), 'ama', 'apa', 'ieee', 'cse', or any of 10,000+ CSL style IDs from citation-style-language/styles (e.g. 'chicago-author-date', 'harvard-cite-them-right', 'modern-language-association', 'nature', 'bmj', 'the-lancet'). Aliases and dependent styles resolve automatically — 'harvard' → 'harvard-cite-them-right'."
           },
           "lang": {
             "type": "string",
-            "description": "Locale for formatting (e.g. en-US, en-GB, fr-FR)"
+            "description": "BCP-47 locale tag for formatting (e.g. 'en-US', 'en-GB', 'fr-FR'). Defaults to the locale embedded in the chosen CSL style, typically en-US."
           },
           "footnote": {
             "type": "boolean",
-            "description": "Format as footnotes instead of bibliography entries"
+            "description": "When true, render as a footnote/note-style citation rather than a bibliography entry. Only meaningful for note-style CSL styles (chicago-note-bibliography, turabian-fullnote-bibliography); ignored by author-date and numeric styles."
           },
           "output": {
             "type": "string",
             "enum": ["text", "html", "json"],
-            "description": "Output format (default: text)"
+            "description": "Output format: 'text' (plain text, default), 'html' (marked-up HTML for web rendering), or 'json' (structured CSL items, equivalent to resolveIdentifier)."
           }
         },
         "required": ["text"]
@@ -217,26 +217,26 @@
     {
       "name": "exportCitation",
       "title": "Export Citation",
-      "description": "Export one or more academic identifiers as a bibliography file in a chosen reference-manager format. Use when the user wants a file they can import into Zotero, Mendeley, EndNote, RefWorks, LaTeX (BibTeX), Excel (CSV), or similar — e.g. 'give me these as BibTeX' or 'export to RIS'. Format parameter is required: 'bib' (BibTeX), 'ris' (RIS), 'csl' (CSL JSON), 'endnote-xml' (EndNote XML), 'endnote-refer' (EndNote Refer/tagged), 'refworks' (RefWorks tagged), 'medline' (NBIB/MEDLINE), 'zotero-rdf' (Zotero RDF), 'csv' (spreadsheet-friendly), or 'txt' (plain-text bibliography rendered with the optional style parameter). Accepts the same identifier formats as resolveIdentifier. Returns: a single string containing the entire bibliography in the requested format, ready to be saved to a file (.bib, .ris, .csv, .xml, .nbib, .rdf, etc.) or pasted into the target tool. Read-only; no side effects.",
+      "description": "Export scholarly identifiers to a bibliography file format ready to write to disk or paste into a reference manager. Use when the user wants a file (.bib, .ris, .nbib, .xml, .rdf, .csv) for Zotero, Mendeley, EndNote, RefWorks, BibTeX/LaTeX, Pandoc, or Excel. Format parameter is required: bib (BibTeX — LaTeX), ris (RIS — most widely supported by reference managers), csl (CSL JSON — Pandoc/Quarto), endnote-xml, endnote-refer, refworks, medline (NBIB — PubMed round-trips, clinical workflows), zotero-rdf, csv (spreadsheet-friendly), or txt (plain-text bibliography rendered with the optional style parameter — txt is the only format that uses style; the others have their own structured shape and ignore it). Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. Returns: { content: string, format: string } where content is the entire bibliography in the requested format as a single string — write it to a file (.bib/.ris/.nbib/etc.) or paste it directly into the target tool. Use formatCitation instead when the user wants in-line citation text (manuscript, slide); use resolveIdentifier when they want raw structured metadata. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); without it the tool returns an isError configuration message. Rate limits follow the user's RapidAPI subscription plan.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more identifiers (DOIs, PMIDs, ISBNs, etc.) separated by newlines or commas"
+            "description": "One or more scholarly identifiers to export. Same vocabulary as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS, prefixes tolerated). Multiple identifiers may be separated by newlines or commas."
           },
           "format": {
             "type": "string",
             "enum": ["bib", "ris", "csv", "csl", "endnote-refer", "endnote-xml", "refworks", "medline", "zotero-rdf", "txt"],
-            "description": "Export format"
+            "description": "Export format. 'bib' (BibTeX/.bib for LaTeX), 'ris' (RIS — most widely supported by reference managers), 'csl' (CSL JSON for Pandoc/Quarto), 'endnote-xml' (EndNote XML import), 'endnote-refer' (EndNote Refer/tagged), 'refworks' (RefWorks tagged), 'medline' (NBIB for PubMed round-trips), 'zotero-rdf' (Zotero RDF), 'csv' (spreadsheet-friendly), or 'txt' (plain-text bibliography rendered with the optional `style` parameter)."
           },
           "style": {
             "type": "string",
-            "description": "Citation style (used only for txt export)"
+            "description": "Citation style ID — used only when format='txt'. Same vocabulary as formatCitation's style parameter (vancouver, apa, ama, ieee, cse, or any CSL style ID). Ignored by all other formats."
           },
           "lang": {
             "type": "string",
-            "description": "Locale for formatting (e.g. en-US)"
+            "description": "BCP-47 locale tag (e.g. 'en-US') — used only when format='txt' and style is set. Ignored by structured formats."
           }
         },
         "required": ["text", "format"]
@@ -266,13 +266,13 @@
     {
       "name": "checkRetraction",
       "title": "Check Retraction",
-      "description": "Check whether a single work has been retracted, corrected, or had an expression of concern raised. Sourced from Crossref `updated-by` (Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup. Single identifier only — this tool does not accept batched input. Returns: { doi, resolvedFrom?, reason?, result } where result has isRetracted, hasCorrections, hasConcern (booleans), notices (array of {type, label, doi, date, source}), and title. doi is null when no DOI could be resolved (e.g. an ISBN), in which case reason is 'no_doi' and result is null. Read-only; no side effects.",
+      "description": "Check whether a single scholarly work has been retracted, corrected, or had an expression of concern raised. Use when the user asks 'has this paper been retracted?' or wants to verify a paper's standing before citing it (clinical, regulatory, evidence-synthesis contexts). Sourced from Crossref `updated-by` (which mirrors Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup; ISBN inputs always return doi=null and reason='no_doi' since books are not in the retraction graph. Single identifier per call — does NOT accept comma/newline batches; loop one call per identifier for multiple papers. Returns: { doi, resolvedFrom?, reason?, result } where result has isRetracted, hasCorrections, hasConcern (booleans), notices (array of {type: 'retraction'|'correction'|'expression-of-concern', label, doi, date, source}), and title; result is null when no DOI could be resolved and reason explains why ('no_doi'). No sibling tool overlaps this — resolveIdentifier returns metadata but not retraction status. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); without it the tool returns an isError configuration message. Rate limits follow the user's RapidAPI subscription plan; Crossref is queried server-side with its own caching.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "A single identifier to check (DOI, PMID, PMCID, arXiv ID, or ADS bibcode). 1–500 characters.",
+            "description": "A single scholarly identifier to check. 1–500 characters. Accepted: DOI, PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). ISBN inputs are accepted but always return doi=null since books are not in the retraction graph. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers.",
             "minLength": 1,
             "maxLength": 500
           }
@@ -334,13 +334,13 @@
     {
       "name": "checkOpenAccess",
       "title": "Check Open Access",
-      "description": "Check whether a single work is openly accessible and where to find the best legal version. Sourced from Unpaywall. Returns OA status (gold/green/hybrid/bronze/closed), the best landing or PDF URL, license, and version when available. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup. Single identifier only — this tool does not accept batched input. Returns: { doi, resolvedFrom?, reason?, result } where result has isOa (boolean), oaStatus, title, bestLocation ({url, hostType, license, version} or null), and locations (array of the same shape). doi is null when no DOI could be resolved (e.g. an ISBN), in which case reason is 'no_doi' and result is null. Read-only; no side effects.",
+      "description": "Check whether a single scholarly work is openly accessible and where to find the best legal version. Use when the user asks 'is this open access?', 'where can I read this for free?', or wants the OA license/version before reusing or redistributing. Sourced from Unpaywall. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup; inputs that don't map to a DOI return doi=null and reason='no_doi'. Single identifier per call — does NOT accept comma/newline batches; loop one call per identifier for multiple papers. Returns: { doi, resolvedFrom?, reason?, result } where result has isOa (boolean), oaStatus ('gold' | 'green' | 'hybrid' | 'bronze' | 'closed'), title, bestLocation ({url, hostType: 'publisher' | 'repository', license, version: 'submittedVersion' | 'acceptedVersion' | 'publishedVersion'} or null), and locations (array of the same shape); result is null when no DOI could be resolved and reason explains why ('no_doi'). No sibling tool overlaps this — resolveIdentifier returns metadata but not OA status. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); without it the tool returns an isError configuration message. Rate limits follow the user's RapidAPI subscription plan; Unpaywall is queried server-side with its own caching.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
-            "description": "A single identifier to check (DOI, PMID, PMCID, arXiv ID, ISBN, or ADS bibcode). 1–500 characters.",
+            "description": "A single scholarly identifier to check. 1–500 characters. Accepted: DOI, PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes). Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers.",
             "minLength": 1,
             "maxLength": 500
           }

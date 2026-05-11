@@ -43,7 +43,7 @@ export async function callApi<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-request-id": requestId,
-    "User-Agent": "scholar-sidekick-mcp/0.6.0",
+    "User-Agent": "scholar-sidekick-mcp/0.6.1",
   };
 
   if (config.rapidApiKey) {

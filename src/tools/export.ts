@@ -11,12 +11,33 @@ export function registerExportTool(server: McpServer, config: ClientConfig): voi
     {
       title: "Export Citation",
       description:
-        "Export academic citations from identifiers (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, " +
-        "ISSNs, ADS bibcodes, WHO IRIS URLs) to bibliography file formats: " +
-        "BibTeX (.bib), RIS, CSV, CSL-JSON, EndNote XML, EndNote Refer, " +
-        "RefWorks, MEDLINE/NBIB, Zotero RDF, or plain text. " +
-        "Accepts a single identifier or a comma/newline-separated batch.",
+        "Export scholarly identifiers to a bibliography file format ready to write to disk or paste " +
+        "into a reference manager. Use when the user wants a file (.bib, .ris, .nbib, .xml, .rdf, " +
+        ".csv) for Zotero, Mendeley, EndNote, RefWorks, BibTeX/LaTeX, Pandoc, or Excel. " +
+        "Format parameter is required: bib (BibTeX — LaTeX), ris (RIS — most widely supported by " +
+        "reference managers), csl (CSL JSON — Pandoc/Quarto), endnote-xml, endnote-refer, refworks, " +
+        "medline (NBIB — PubMed round-trips, clinical workflows), zotero-rdf, csv (spreadsheet-friendly), " +
+        "or txt (plain-text bibliography rendered with the optional style parameter — txt is the only " +
+        "format that uses style; the others have their own structured shape and ignore it). " +
+        "Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/" +
+        "WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. " +
+        "Returns: { content: string, format: string } where content is the entire bibliography in the " +
+        "requested format as a single string — write it to a file (.bib/.ris/.nbib/etc.) or paste it " +
+        "directly into the target tool. " +
+        "Use formatCitation instead when the user wants in-line citation text (manuscript, slide); " +
+        "use resolveIdentifier when they want raw structured metadata. " +
+        "Read-only and idempotent — safe to retry. " +
+        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
+        "without it the tool returns an isError configuration message. " +
+        "Rate limits follow the user's RapidAPI subscription plan.",
       inputSchema: ExportCitationInput,
+      annotations: {
+        title: "Export Citation",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (input) => {
       if (!config.rapidApiKey) return missingKeyResult();

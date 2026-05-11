@@ -11,13 +11,35 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
     {
       title: "Format Citation",
       description:
-        "Format academic citations from identifiers (DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, " +
-        "ISSNs, ADS bibcodes, WHO IRIS URLs) into a specific citation style. " +
-        "Accepts a single identifier or a comma/newline-separated batch. " +
-        "Returns formatted text, HTML, or structured JSON, plus a provenance metadata block " +
-        "(formatter, styleUsed, requestId, warnings). " +
-        "Supports Vancouver, AMA, APA, IEEE, CSE, and 10,000+ CSL styles.",
+        "Format scholarly identifiers into a finished citation in a specific style. " +
+        "Use when the user wants a paste-ready citation string for a manuscript, slide, message, " +
+        "footnote, or in-line reference. " +
+        "Style defaults to vancouver if unspecified; ask the user before defaulting if any " +
+        "ambiguity exists (e.g. 'Harvard' and 'Chicago' have multiple variants — confirm which one). " +
+        "Supports five hand-tuned builtins (vancouver, ama, apa, ieee, cse) plus any of 10,000+ " +
+        "CSL style IDs (chicago-author-date, harvard-cite-them-right, modern-language-association, " +
+        "nature, bmj, the-lancet, etc.). Alias and dependent-style resolution apply, so 'harvard' " +
+        "resolves to 'harvard-cite-them-right' and the canonical ID is reported back as styleUsed. " +
+        "Output defaults to text; pass output=html for marked-up HTML or output=json for structured CSL items. " +
+        "Accepts the same identifier formats as resolveIdentifier (DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/" +
+        "WHO IRIS, prefixes tolerated), single or comma/newline-separated batch — one round trip per call. " +
+        "Returns: one of { text, html, items } depending on the output parameter, followed by a metadata " +
+        "block ({formatter: 'builtin' | 'csl', styleUsed, requestId, warnings?}) appended as a second " +
+        "text content item — surface this to the user when they care about reproducibility. " +
+        "Use resolveIdentifier instead when the user wants raw metadata to inspect or transform; " +
+        "use exportCitation when they want a downloadable bibliography file. " +
+        "Read-only and idempotent — safe to retry. " +
+        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
+        "without it the tool returns an isError configuration message. " +
+        "Rate limits follow the user's RapidAPI subscription plan.",
       inputSchema: FormatCitationInput,
+      annotations: {
+        title: "Format Citation",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     async (input) => {
       if (!config.rapidApiKey) return missingKeyResult();
