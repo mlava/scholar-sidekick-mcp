@@ -35,7 +35,7 @@ describe("MCP Server resources", () => {
     if (cleanup) await cleanup();
   });
 
-  it("lists all three reference resources", async () => {
+  it("lists all four reference resources", async () => {
     const { client, close } = await withClient();
     cleanup = close;
 
@@ -45,6 +45,7 @@ describe("MCP Server resources", () => {
       "scholar-sidekick://formats",
       "scholar-sidekick://identifiers",
       "scholar-sidekick://styles",
+      "scholar-sidekick://verify-verdicts",
     ]);
   });
 

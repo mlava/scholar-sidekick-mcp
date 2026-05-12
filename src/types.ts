@@ -116,6 +116,78 @@ export const CheckOpenAccessInput = {
     ),
 };
 
+/* ─── verifyCitation ─────────────────────────────────────────────────── */
+// The /api/verify endpoint accepts a structured `claimed` object plus
+// optional flags. The MCP surface keeps the shape flat for LLM ergonomics:
+// every cited field is a top-level string the LLM can fill independently.
+// The tool wrapper bundles them into `claimed` server-side. Only `title`
+// plus exactly one identifier is required; the rest refine the verdict.
+
+export const VerifyCitationInput = {
+  title: z
+    .string()
+    .min(1)
+    .max(2000)
+    .describe(
+      "The title as it appears in the cited reference. This is the field the verifier cross-checks against the resolved record at the supplied identifier. Required.",
+    ),
+  doi: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "DOI as cited (with or without https://doi.org/ prefix). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
+    ),
+  pmid: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("PubMed ID as cited (digits only, or with 'PMID:' prefix)."),
+  pmcid: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("PubMed Central ID (e.g. 'PMC1234567' or 'PMCID:1234567')."),
+  isbn: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("ISBN (10- or 13-digit, hyphens tolerated)."),
+  arxiv: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("arXiv ID (e.g. '2301.08745' or 'arXiv:2301.08745'; old-style 'hep-ph/0501023' accepted)."),
+  issn: z.string().max(50).optional().describe("ISSN for journal-level resolution."),
+  ads: z.string().max(50).optional().describe("NASA ADS bibcode (19 chars)."),
+  whoIrisUrl: z.string().max(2000).optional().describe("WHO IRIS URL (https://iris.who.int/...)."),
+  author: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "First-author family name as cited. Refines the verdict — a title-vs-resolved-title match plus an author mismatch raises suspicion of fabrication. Pass only the family name (e.g. 'Topaz', not 'Topaz, Maxim').",
+    ),
+  year: z
+    .number()
+    .int()
+    .min(0)
+    .max(9999)
+    .optional()
+    .describe("Publication year as cited. Wrong year alone does not flip the verdict, but >=2-year gap from the resolved record lowers confidence."),
+  container: z
+    .string()
+    .max(500)
+    .optional()
+    .describe("Journal or container name as cited (e.g. 'The Lancet', 'Neuroscience'). Soft signal — surfaced as a mismatch field but does not gate the verdict."),
+  screen_with_llm: z
+    .boolean()
+    .optional()
+    .describe(
+      "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false.",
+    ),
+};
+
 /* ─── API response types ──────────────────────────────────────────────── */
 
 export interface FormatApiResponse {
@@ -185,6 +257,65 @@ export interface OaApiResponse {
   error?: string;
 }
 
+export interface VerifyMismatch {
+  field: "title" | "first_author" | "year" | "container";
+  claimed: string | number | null;
+  resolved: string | number | null;
+  similarity: number;
+}
+
+export interface VerifyCandidate {
+  /** Resolved BiblioItem the title-search aggregator surfaced. */
+  item: Record<string, unknown>;
+  registries: string[];
+  /** 0-1 title similarity against the claim. */
+  score: number;
+}
+
+export interface VerifyRegistrySearchStatus {
+  registry: "crossref" | "pubmed" | "openalex";
+  ok: boolean;
+  count: number;
+  reason?: string;
+}
+
+export interface VerifyLlmScreenProvenance {
+  applied: boolean;
+  model?: string;
+  prompt_version?: string;
+  verdict?: "informal_abbreviation" | "different_paper" | "uncertain";
+  reasoning?: string;
+  cost_usd?: number;
+  reason?:
+    | "verdict_not_eligible"
+    | "daily_budget_exceeded"
+    | "no_gateway"
+    | "upstream_error"
+    | "malformed_response";
+}
+
+export interface VerifyProvenance {
+  stages_run: Array<"compare" | "search" | "llm_screen">;
+  resolved_via: string | null;
+  registries_searched?: VerifyRegistrySearchStatus[];
+  llm_screen?: VerifyLlmScreenProvenance;
+}
+
+export interface VerifyApiResponse {
+  ok: boolean;
+  verdict?: "matched" | "mismatch" | "not_found" | "ambiguous" | "parsing_error";
+  confidence?: "high" | "medium" | "low";
+  /** Resolved BiblioItem when something resolved; null on not_found. */
+  matched?: Record<string, unknown> | null;
+  mismatches?: VerifyMismatch[];
+  candidates?: VerifyCandidate[];
+  _provenance?: VerifyProvenance;
+  /** Set on the error envelope (ok: false). */
+  error?: string;
+  code?: string;
+  requestId?: string;
+}
+
 export interface ApiResult<T> {
   ok: boolean;
   status: number;
@@ -203,4 +334,8 @@ export const SCHOLAR_HEADER_NAMES = [
   "x-scholar-style-used",
   "x-csl-warning",
   "x-scholar-warnings",
+  // verifier headers (Phase 12i)
+  "x-scholar-verify-verdict",
+  "x-scholar-verify-confidence",
+  "x-scholar-verify-version",
 ] as const;

@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.mlava/scholar-sidekick-mcp",
-  "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS into citations, exports, retraction + OA.",
+  "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS into citations, exports, retraction + OA + citation verification (Topaz et al. Lancet 2026 fabrication-pattern detection).",
   "repository": {
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.6.1",
+  "version": "0.7.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.6.1",
+      "version": "0.7.0",
       "transport": {
         "type": "stdio"
       },

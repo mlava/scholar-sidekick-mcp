@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.6.1",
-  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch, plus retraction and open-access checks.",
-  "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The format/export/resolve tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Two single-identifier checks complete the picture: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
+  "version": "0.7.0",
+  "description": "Resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch, plus retraction, open-access, and citation-verification checks (Topaz et al. Lancet 2026 fabrication-pattern detection).",
+  "long_description": "Scholar Sidekick MCP resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) into structured bibliographic metadata, formats citations in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet, and many more), and exports references to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The format/export/resolve tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation in one prompt for an end-to-end 'raw IDs → exportable bibliography' workflow. Three single-citation checks complete the picture: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall; verifyCitation cross-checks the cited title against the resolved record at the cited identifier to detect the AI-driven fabrication pattern documented by Topaz et al. (Lancet 2026 — 1 in 277 biomedical papers in early 2026 contains at least one fabricated reference; the dominant pattern is real DOI + invented title, which simple identifier resolution cannot catch). Each formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation.",
   "author": {
     "name": "Scholar Sidekick",
     "url": "https://scholar-sidekick.com"
@@ -408,6 +408,166 @@
         "idempotentHint": true,
         "openWorldHint": true
       }
+    },
+    {
+      "name": "verifyCitation",
+      "title": "Verify Citation",
+      "description": "Verify a claimed citation against the resolved record at its identifier. Detects the dominant AI-driven fabrication pattern documented by Topaz et al. (Lancet 2026): a real, resolvable identifier (DOI / PMID / PMCID / arXiv / etc.) paired with a title that does NOT correspond to the paper at that identifier. Use when the user pastes a citation and asks 'is this real?' or 'check this DOI' — most fabricated citations resolve cleanly under doi.org but their cited title and the resolved title disagree. Single citation per call. Required: title plus exactly one identifier (doi, pmid, pmcid, isbn, arxiv, issn, ads, or whoIrisUrl). Optional refinements: author (first-author family name), year, container (journal). Set screen_with_llm: true to invoke the Stage 3 LLM screen on low-confidence mismatches (catches informal-abbreviation false positives); LLM access is gated to authenticated first-party keys and paid RapidAPI tiers — anonymous callers get 400 LLM_SCREEN_FORBIDDEN. Returns: { verdict, confidence, matched, mismatches, candidates, _provenance } where verdict is 'matched' (claim agrees with resolved record), 'mismatch' (identifier resolves but title does not — Topaz fabrication pattern), 'ambiguous' (identifier resolves to one paper but the claimed title matches a different paper found via title-search — CITADEL 'citation error' subtype), or 'not_found' (neither identifier nor title resolves). No sibling tool overlaps — resolveIdentifier returns metadata for a known-good identifier; verifyCitation is the only tool that cross-checks claimed title vs resolved metadata. Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY; the non-LLM path is anonymous-tier accessible.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title as it appears in the cited reference. Required.",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "doi": {
+            "type": "string",
+            "description": "DOI as cited (with or without https://doi.org/ prefix). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
+            "maxLength": 200
+          },
+          "pmid": {
+            "type": "string",
+            "description": "PubMed ID as cited (digits only, or with 'PMID:' prefix).",
+            "maxLength": 50
+          },
+          "pmcid": {
+            "type": "string",
+            "description": "PubMed Central ID (e.g. 'PMC1234567' or 'PMCID:1234567').",
+            "maxLength": 50
+          },
+          "isbn": {
+            "type": "string",
+            "description": "ISBN (10- or 13-digit, hyphens tolerated).",
+            "maxLength": 50
+          },
+          "arxiv": {
+            "type": "string",
+            "description": "arXiv ID (e.g. '2301.08745' or 'arXiv:2301.08745'; old-style 'hep-ph/0501023' accepted).",
+            "maxLength": 50
+          },
+          "issn": {
+            "type": "string",
+            "description": "ISSN for journal-level resolution.",
+            "maxLength": 50
+          },
+          "ads": {
+            "type": "string",
+            "description": "NASA ADS bibcode (19 chars).",
+            "maxLength": 50
+          },
+          "whoIrisUrl": {
+            "type": "string",
+            "description": "WHO IRIS URL (https://iris.who.int/...).",
+            "maxLength": 2000
+          },
+          "author": {
+            "type": "string",
+            "description": "First-author family name as cited. Refines the verdict — a title-vs-resolved-title match plus an author mismatch raises suspicion of fabrication.",
+            "maxLength": 200
+          },
+          "year": {
+            "type": "integer",
+            "description": "Publication year as cited. Wrong year alone does not flip the verdict, but >=2-year gap from the resolved record lowers confidence.",
+            "minimum": 0,
+            "maximum": 9999
+          },
+          "container": {
+            "type": "string",
+            "description": "Journal or container name as cited. Soft signal — surfaced as a mismatch field but does not gate the verdict.",
+            "maxLength": 500
+          },
+          "screen_with_llm": {
+            "type": "boolean",
+            "description": "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false."
+          }
+        },
+        "required": ["title"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": ["matched", "mismatch", "not_found", "ambiguous", "parsing_error"],
+            "description": "Verdict on the cited citation."
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"],
+            "description": "Confidence in the verdict."
+          },
+          "matched": {
+            "type": ["object", "null"],
+            "description": "Resolved BiblioItem at the cited identifier (or top search candidate on the no-identifier / ambiguous-via-search path). Null on not_found."
+          },
+          "mismatches": {
+            "type": "array",
+            "description": "Per-field discrepancies between claimed and resolved metadata.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": ["title", "first_author", "year", "container"]
+                },
+                "claimed": {},
+                "resolved": {},
+                "similarity": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "candidates": {
+            "type": "array",
+            "description": "Title-search alternatives surfaced when the cited identifier resolved to something other than the claimed title (or when no identifier was supplied). Present whenever the search stage ran.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item": { "type": "object" },
+                "registries": {
+                  "type": "array",
+                  "items": { "type": "string", "enum": ["crossref", "pubmed", "openalex"] }
+                },
+                "score": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "_provenance": {
+            "type": "object",
+            "properties": {
+              "stages_run": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["compare", "search", "llm_screen"] }
+              },
+              "resolved_via": { "type": ["string", "null"] },
+              "registries_searched": { "type": "array" },
+              "llm_screen": {
+                "type": "object",
+                "properties": {
+                  "applied": { "type": "boolean" },
+                  "model": { "type": "string" },
+                  "verdict": {
+                    "type": "string",
+                    "enum": ["informal_abbreviation", "different_paper", "uncertain"]
+                  },
+                  "reasoning": { "type": "string" },
+                  "cost_usd": { "type": "number" },
+                  "reason": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "required": ["verdict", "confidence"]
+      },
+      "annotations": {
+        "title": "Verify Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
     }
   ],
   "tools_generated": false,
@@ -498,6 +658,23 @@
         }
       ],
       "text": "Check whether ${arguments.identifier} is open access and report the best legal landing or PDF URL."
+    },
+    {
+      "name": "verify",
+      "description": "Check whether a claimed citation matches the paper at its identifier (detects AI-driven citation fabrication).",
+      "arguments": [
+        {
+          "name": "title",
+          "description": "The cited title (the title as it appears in the bibliography).",
+          "required": true
+        },
+        {
+          "name": "identifier",
+          "description": "The cited identifier (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL). Single identifier only.",
+          "required": true
+        }
+      ],
+      "text": "Verify the citation '${arguments.title}' at identifier ${arguments.identifier}."
     }
   ],
   "prompts_generated": false,
@@ -521,6 +698,13 @@
       "uri": "scholar-sidekick://formats",
       "title": "Supported Export Formats",
       "description": "Reference table of the 10 export formats supported by exportCitation (BibTeX, RIS, CSL JSON, EndNote XML/Refer, RefWorks, MEDLINE/NBIB, Zotero RDF, CSV, plain text), with picking guidance per common workflow.",
+      "mimeType": "text/markdown"
+    },
+    {
+      "name": "verify-verdicts",
+      "uri": "scholar-sidekick://verify-verdicts",
+      "title": "Citation Verifier Verdicts",
+      "description": "Reference for the four verifier verdicts (matched / mismatch / ambiguous / not_found), confidence scores, the LLM-screen gating, the _provenance block, and the Topaz et al. (Lancet 2026) source paper. Use as context when interpreting verifyCitation responses.",
       "mimeType": "text/markdown"
     }
   ],

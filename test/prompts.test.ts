@@ -35,7 +35,7 @@ describe("MCP Server prompts", () => {
     if (cleanup) await cleanup();
   });
 
-  it("lists all six prompts", async () => {
+  it("lists all seven prompts", async () => {
     const { client, close } = await withClient();
     cleanup = close;
 
@@ -48,6 +48,7 @@ describe("MCP Server prompts", () => {
       "open_access",
       "resolve",
       "retraction",
+      "verify",
     ]);
   });
 

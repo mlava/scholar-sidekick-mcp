@@ -8,9 +8,10 @@ import { registerCheckRetractionTool } from "./tools/retraction.js";
 import { registerExportTool } from "./tools/export.js";
 import { registerFormatTool } from "./tools/format.js";
 import { registerResolveTool } from "./tools/resolve.js";
+import { registerVerifyCitationTool } from "./tools/verify.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.6.1";
+export const SERVER_VERSION = "0.7.0";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP turns academic identifiers into clean citations and surfaces retraction + open-access status.
 
@@ -20,6 +21,7 @@ When to use this server:
 - The user asks to export a bibliography to BibTeX, RIS, EndNote, RefWorks, MEDLINE, Zotero RDF, CSL JSON, or CSV
 - The user asks whether a paper has been retracted, corrected, or had an expression of concern raised
 - The user asks whether a paper is open access, where to find a free legal copy, or about a paper's OA status
+- The user asks whether a citation is real or fabricated, mentions citation hallucination, or pastes a citation and asks "is this real?" / "verify this DOI"
 
 Tool selection:
 - resolveIdentifier — when the user wants raw structured metadata (returns CSL JSON: title, authors, journal, year, identifiers)
@@ -27,10 +29,11 @@ Tool selection:
 - exportCitation — when the user wants a downloadable bibliography file (returns the file contents as a string)
 - checkRetraction — when the user asks whether a single work has been retracted, corrected, or flagged with an expression of concern (Crossref / Retraction Watch)
 - checkOpenAccess — when the user asks whether a single work is openly accessible or wants the best legal URL/license/version (Unpaywall)
+- verifyCitation — when the user wants to check whether a claimed citation matches the paper at its identifier (detects the Topaz et al. 2026 fabrication pattern: real DOI + invented title). Use this, NOT resolveIdentifier, when the question is "is this citation real?" — the verifier cross-checks claimed title against resolved title; resolveIdentifier alone never catches the dominant fabrication pattern.
 
 Tips:
 - resolveIdentifier, formatCitation, and exportCitation accept a single identifier or a comma/newline-separated batch — batch when possible to save calls
-- checkRetraction and checkOpenAccess accept ONE identifier per call. For multiple papers, call the tool once per identifier; do not concatenate
+- checkRetraction, checkOpenAccess, and verifyCitation accept ONE citation per call. For multiple papers, call the tool once per citation; do not concatenate
 - Pass identifiers verbatim. The server tolerates DOI URLs (https://doi.org/...), "PMID:" / "PMC" prefixes, "arXiv:" prefixes, and ISBN hyphens
 - Default style for formatCitation is Vancouver. If the user does not name a style, ask before defaulting`;
 
@@ -52,6 +55,7 @@ export function createMcpServer(config?: ClientConfig): McpServer {
   registerResolveTool(server, cfg);
   registerCheckRetractionTool(server, cfg);
   registerCheckOpenAccessTool(server, cfg);
+  registerVerifyCitationTool(server, cfg);
   registerPrompts(server);
   registerResources(server);
 

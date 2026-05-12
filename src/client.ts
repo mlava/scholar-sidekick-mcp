@@ -3,6 +3,7 @@ import type {
   FormatApiResponse,
   OaApiResponse,
   RetractionApiResponse,
+  VerifyApiResponse,
 } from "./types.js";
 import { SCHOLAR_HEADER_NAMES } from "./types.js";
 
@@ -43,7 +44,7 @@ export async function callApi<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-request-id": requestId,
-    "User-Agent": "scholar-sidekick-mcp/0.6.1",
+    "User-Agent": "scholar-sidekick-mcp/0.7.0",
   };
 
   if (config.rapidApiKey) {
@@ -164,4 +165,14 @@ export async function checkOpenAccess(
   input: { id: string },
 ): Promise<ApiResult<OaApiResponse>> {
   return callApi<OaApiResponse>(config, "/api/oa-check", input);
+}
+
+export async function verifyCitation(
+  config: ClientConfig,
+  input: {
+    claimed: Record<string, unknown>;
+    options?: { screen_with_llm?: boolean; bypassCache?: boolean };
+  },
+): Promise<ApiResult<VerifyApiResponse>> {
+  return callApi<VerifyApiResponse>(config, "/api/verify", input);
 }

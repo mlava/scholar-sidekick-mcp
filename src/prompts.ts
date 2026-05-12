@@ -158,4 +158,32 @@ export function registerPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "verify",
+    {
+      title: "Verify Citation",
+      description:
+        "Check whether a claimed citation matches the paper at its identifier (detects AI-driven citation fabrication).",
+      argsSchema: {
+        title: z.string().describe("The cited title (the title as it appears in the bibliography)."),
+        identifier: z
+          .string()
+          .describe(
+            "The cited identifier (DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, ADS bibcode, or WHO IRIS URL). Single identifier only.",
+          ),
+      },
+    },
+    ({ title, identifier }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `Verify this citation using the verifyCitation tool from the scholar-sidekick MCP server. The cited title is "${title}" and the cited identifier is ${identifier}. Detect the identifier type (DOI starts with "10.", PMID is numeric, PMCID starts with "PMC", arXiv ID matches YYYY.NNNNN or has the "arXiv:" prefix, ISBN is 10/13 digits, etc.) and pass it in the appropriate field. Report the verdict (matched / mismatch / ambiguous / not_found), the confidence, and — if there is any mismatch — what the resolved record at that identifier actually says, so the user can see where the cited title and the resolved title diverged. This is the check that catches the dominant AI-citation-fabrication pattern documented by Topaz et al. (Lancet 2026).`,
+          },
+        },
+      ],
+    }),
+  );
 }
