@@ -170,4 +170,4 @@ npm run typecheck
 
 MIT
 
-[![MCP Badge](https://lobehub.com/badge/mcp/mlavercombe-scholar-sidekick-mcp)](https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp)
+[![MCP Badge](https://lobehub.com/badge/mcp/mlavercombe-scholar-sidekick-mcp?style=flat)](https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp)
