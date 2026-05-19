@@ -14,6 +14,8 @@ export function registerResolveTool(server: McpServer, config: ClientConfig): vo
         "Resolve scholarly identifiers to structured CSL JSON metadata (title, authors, journal, " +
         "year, identifiers). Use when the user wants raw bibliographic data to inspect, transform, " +
         "or feed into another tool — not a formatted citation. " +
+        "Common single-shot conversions: PMID → PMCID, arXiv → DOI, ISBN → CSL JSON, " +
+        "WHO IRIS URL → structured metadata. " +
         "Accepts DOI, PMID, PMCID, ISBN, arXiv ID, ISSN, NASA ADS bibcode, or WHO IRIS URL, " +
         "with or without prefixes (PMID:, arXiv:, ISBN hyphens, https://doi.org/...). " +
         "Pass a single identifier or a comma/newline-separated batch — one round trip per call. " +

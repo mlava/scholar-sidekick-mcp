@@ -14,7 +14,10 @@ export function registerCheckRetractionTool(server: McpServer, config: ClientCon
         "Check whether a single scholarly work has been retracted, corrected, or had an expression " +
         "of concern raised. Use when the user asks 'has this paper been retracted?' or wants to " +
         "verify a paper's standing before citing it (clinical, regulatory, evidence-synthesis " +
-        "contexts). Sourced from Crossref `updated-by` (which mirrors Retraction Watch). " +
+        "contexts). For multi-paper bibliography audits (clinical guidelines, systematic reviews), " +
+        "loop one call per identifier — the tool intentionally rejects batch input to keep " +
+        "retraction-status results unambiguous per work. " +
+        "Sourced from Crossref `updated-by` (which mirrors Retraction Watch). " +
         "Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup; ISBN inputs always return " +
         "doi=null and reason='no_doi' since books are not in the retraction graph. " +
         "Single identifier per call — does NOT accept comma/newline batches; loop one call per " +
