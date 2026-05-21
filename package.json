@@ -51,7 +51,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "vitest run",
-    "test:ci": "vitest run --forbid-only",
+    "test:ci": "vitest run --allowOnly=false",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build"
