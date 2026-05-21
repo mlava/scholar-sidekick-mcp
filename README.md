@@ -76,6 +76,14 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
 }
 ```
 
+### Agent skill (optional)
+
+Install a companion [Agent Skill](https://skills.sh) that teaches Claude Code, Cline, and other agents when and how to use these tools — it complements the server config above:
+
+```bash
+npx skills add mlava/scholar-sidekick-mcp
+```
+
 ## Environment Variables
 
 | Variable | Required | Description |
