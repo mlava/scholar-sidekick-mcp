@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Daily drift monitor: does the published website /.well-known/mcp.json
+    # still match what this server actually exposes? (live-parity job below)
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Typecheck + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Includes the offline well-known parity test: asserts the running server
+      # registers exactly the expected tools/prompts/resources.
+      - run: npm run test:ci
+
+  live-parity:
+    name: Live well-known parity (drift monitor)
+    runs-on: ubuntu-latest
+    # Monitor only — not a PR gate. It compares the LIVE website card against
+    # this server, which is expected to differ right after a server change until
+    # the website redeploys; gating PRs on it would couple them to deploy timing.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Compare published /.well-known/mcp.json to the server surface
+        env:
+          CHECK_LIVE_WELL_KNOWN: "1"
+        run: npx vitest run test/well-known-parity.test.ts
