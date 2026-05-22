@@ -85,4 +85,4 @@ For `exportCitation`, the `format` parameter accepts: `bib` (BibTeX), `ris`, `cs
 - **Repairing references inside a manuscript file** (`.tex`, `.bib`, `.md`, `.docx`) — use `citecheck` for that workflow.
 - **Importing as a Python library inside a pipeline** — use `OneCite`. Scholar Sidekick is MCP-only on the install side.
 
-These tools compose well — Scholar Sidekick handles the formatting layer once another tool has produced the identifier.
+These tools compose well - Scholar Sidekick handles the formatting layer once another tool has produced the identifier.
