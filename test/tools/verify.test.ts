@@ -134,7 +134,7 @@ describe("verifyCitation tool", () => {
         author: "Doe",
         year: 2024,
         container: "Some Journal",
-        screen_with_llm: true,
+        screenWithLlm: true,
       },
     });
 
@@ -153,7 +153,7 @@ describe("verifyCitation tool", () => {
     await server.close();
   });
 
-  it("omits options block when screen_with_llm is not set", async () => {
+  it("omits options block when screenWithLlm is not set", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({
         ok: true,
@@ -193,7 +193,7 @@ describe("verifyCitation tool", () => {
     const { server, client } = await setup();
     const result = await client.callTool({
       name: "verifyCitation",
-      arguments: { title: "x", doi: "10.1/y", screen_with_llm: true },
+      arguments: { title: "x", doi: "10.1/y", screenWithLlm: true },
     });
 
     expect(result.isError).toBe(true);

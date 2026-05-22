@@ -97,11 +97,11 @@ what to do next — are described here for LLM context at decision time.
 | --- | --- |
 | \`high\` | Strong signal: titles are very similar or very different; identifiers resolve cleanly. |
 | \`medium\` | Mostly clean but with a small mitigation (e.g. 1-year publication-date gap, slight author-name normalisation). |
-| \`low\` | Borderline: title similarity falls in the 0.7–0.92 range — same paper described informally or paraphrased? Without \`screen_with_llm: true\` the verifier returns the conservative answer; with the LLM screen enabled (paid plans / authenticated first-party only) the verdict can be upgraded. |
+| \`low\` | Borderline: title similarity falls in the 0.7–0.92 range — same paper described informally or paraphrased? Without \`screenWithLlm: true\` the verifier returns the conservative answer; with the LLM screen enabled (paid plans / authenticated first-party only) the verdict can be upgraded. |
 
 ## When to use the LLM screen
 
-Pass \`screen_with_llm: true\` when the user explicitly cares about
+Pass \`screenWithLlm: true\` when the user explicitly cares about
 distinguishing *fabrication* from *informal-abbreviation paraphrase*. Topaz
 et al. document this gap on page 1780: a citation like "Depression and
 anxiety in young adults with ID" is the same paper as the canonical
@@ -123,7 +123,7 @@ Every response carries a \`_provenance\` block:
 | \`stages_run\` | Subset of \`["compare", "search", "llm_screen"]\` — which stages of the verifier actually executed. |
 | \`resolved_via\` | The resolver service that returned the matched record (e.g. \`"crossref"\`, \`"pubmed"\`, \`"crossref-search"\`). |
 | \`registries_searched\` | Per-registry status block, present only when title-search ran. Each entry: \`{registry: "crossref"\\|"pubmed"\\|"openalex", ok, count, reason?}\`. |
-| \`llm_screen\` | Present only when \`screen_with_llm: true\` was requested. Carries \`applied: true\` plus the LLM's verdict / reasoning / cost, or \`applied: false\` plus a reason code (\`verdict_not_eligible\` / \`daily_budget_exceeded\` / \`no_gateway\` / \`upstream_error\` / \`malformed_response\`). |
+| \`llm_screen\` | Present only when \`screenWithLlm: true\` was requested. Carries \`applied: true\` plus the LLM's verdict / reasoning / cost, or \`applied: false\` plus a reason code (\`verdict_not_eligible\` / \`daily_budget_exceeded\` / \`no_gateway\` / \`upstream_error\` / \`malformed_response\`). |
 
 Surface the provenance to the user when they ask "how did you decide?" or
 when they want to reproduce the result.

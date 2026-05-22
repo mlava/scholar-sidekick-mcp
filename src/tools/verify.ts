@@ -22,7 +22,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         "title and the resolved title disagree. " +
         "Single citation per call. Required: `title` plus exactly one identifier (doi, pmid, pmcid, isbn, " +
         "arxiv, issn, ads, or whoIrisUrl). Optional refinements: author (first-author family name), year, " +
-        "container (journal). Set `screen_with_llm: true` to invoke the Stage 3 LLM screen on " +
+        "container (journal). Set `screenWithLlm: true` to invoke the Stage 3 LLM screen on " +
         "low-confidence mismatches (catches informal-abbreviation false positives); LLM access is gated " +
         "to authenticated first-party keys and paid RapidAPI tiers — anonymous callers get " +
         "400 LLM_SCREEN_FORBIDDEN. " +
@@ -54,7 +54,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
 
       // Bundle the flat MCP input into the API's `claimed` + `options` shape.
       const {
-        screen_with_llm,
+        screenWithLlm,
         author,
         title,
         doi,
@@ -86,7 +86,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         claimed: Record<string, unknown>;
         options?: { screen_with_llm?: boolean };
       } = { claimed };
-      if (screen_with_llm) body.options = { screen_with_llm: true };
+      if (screenWithLlm) body.options = { screen_with_llm: true };
 
       const result = await verifyCitation(config, body);
 

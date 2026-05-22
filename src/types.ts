@@ -180,7 +180,7 @@ export const VerifyCitationInput = {
     .max(500)
     .optional()
     .describe("Journal or container name as cited (e.g. 'The Lancet', 'Neuroscience'). Soft signal — surfaced as a mismatch field but does not gate the verdict."),
-  screen_with_llm: z
+  screenWithLlm: z
     .boolean()
     .optional()
     .describe(
