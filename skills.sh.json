@@ -1,0 +1,10 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "groupings": [
+    {
+      "title": "Scholar Sidekick",
+      "description": "Resolve scholarly identifiers (DOI, PMID, ISBN, arXiv, WHO IRIS, and more) into structured metadata, citations in 10,000+ styles, and nine export formats — plus retraction, open-access, and citation-fabrication checks.",
+      "skills": ["scholar-sidekick"]
+    }
+  ]
+}
