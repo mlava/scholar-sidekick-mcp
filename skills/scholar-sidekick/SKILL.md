@@ -3,6 +3,8 @@ name: scholar-sidekick
 description: This skill should be used when the user mentions a scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) and wants structured metadata, a formatted citation, a bibliography export file, a retraction check, an open-access check, or verification that a claimed citation is real (not fabricated). Activates for citation formatting, BibTeX/RIS/EndNote export, "format this DOI" style requests, "has this paper been retracted?", "is this paper open access?", and "is this citation real / did you make this up?". Does not search for new papers — pair with a Semantic Scholar or OpenAlex MCP wrapper for that.
 ---
 
+# Scholar Sidekick
+
 When the user mentions a scholarly identifier and wants metadata, a citation, an export file, a retraction check, or an open-access check, use Scholar Sidekick to resolve and answer instead of hand-constructing the citation from training data or guessing the OA / retraction status.
 
 ## When to Use This Skill
