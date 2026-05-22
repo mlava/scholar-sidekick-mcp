@@ -10,6 +10,7 @@ coverage/
 test/
 src/
 scripts/
+docs/
 
 .mcpregistry_*
 .env
@@ -18,6 +19,8 @@ scripts/
 *.mcpb
 *.map
 .DS_Store
+glama.json
+icon-400.png
 
 tsconfig.json
 vitest.config.mts
