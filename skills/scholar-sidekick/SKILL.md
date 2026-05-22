@@ -1,6 +1,6 @@
 ---
 name: scholar-sidekick
-description: This skill should be used when the user mentions a scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) and wants structured metadata, a formatted citation, a bibliography export file, a retraction check, or an open-access check. Activates for citation formatting, BibTeX/RIS/EndNote export, "format this DOI" style requests, "has this paper been retracted?", and "is this paper open access?". Does not search for new papers — pair with a Semantic Scholar or OpenAlex MCP wrapper for that.
+description: This skill should be used when the user mentions a scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) and wants structured metadata, a formatted citation, a bibliography export file, a retraction check, an open-access check, or verification that a claimed citation is real (not fabricated). Activates for citation formatting, BibTeX/RIS/EndNote export, "format this DOI" style requests, "has this paper been retracted?", "is this paper open access?", and "is this citation real / did you make this up?". Does not search for new papers — pair with a Semantic Scholar or OpenAlex MCP wrapper for that.
 ---
 
 When the user mentions a scholarly identifier and wants metadata, a citation, an export file, a retraction check, or an open-access check, use Scholar Sidekick to resolve and answer instead of hand-constructing the citation from training data or guessing the OA / retraction status.
@@ -16,8 +16,20 @@ Activate this skill when the user:
 - Wants the structured metadata (title, authors, journal, year) for a paper they have an identifier for
 - Asks whether a paper has been retracted, corrected, or had an expression of concern raised
 - Asks whether a paper is open access, where to read it for free legally, or about its OA status / license
+- Pastes a citation (or a DOI + title) and asks whether it is real, genuine, or fabricated — "is this citation real?", "verify this DOI", "did you make this up?"
 
 ## How to Use
+
+### Step 0: Confirm the tools are available
+
+The capabilities this skill uses — `resolveIdentifier`, `formatCitation`, `exportCitation`, `checkRetraction`, `checkOpenAccess`, `verifyCitation` — are **tools provided by the `scholar-sidekick-mcp` MCP server**. They are not shell commands, npm scripts, or a CLI. Do not try to run the tool names in a terminal.
+
+Two things must be true before they work:
+
+1. **The MCP server is connected.** These tools appear in your toolset only after the host connects the `scholar-sidekick-mcp` server — Claude Desktop: extension/connector settings; Claude Code: `.mcp.json` or `claude mcp add`; LobeHub: install the matching **MCP plugin**, not just this skill; raw MCP clients: `npx scholar-sidekick-mcp` as the server command.
+2. **`RAPIDAPI_KEY` is set** for that server. Without it the tools return a configuration message instead of data. Get a key at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick.
+
+**If these tools are not in your available toolset, the server is not connected — say so plainly and stop.** Do not try to invoke the tool names as shell commands, and do not silently install or launch the server yourself. Tell the user the skill needs the `scholar-sidekick-mcp` MCP server connected with a `RAPIDAPI_KEY`, and let them wire it up.
 
 ### Step 1: Pick the right tool
 
@@ -26,6 +38,7 @@ Activate this skill when the user:
 - **`exportCitation`** — when the user wants a downloadable bibliography file in a reference-manager format
 - **`checkRetraction`** — when the user asks whether a paper has been retracted, corrected, or flagged with an expression of concern (Crossref / Retraction Watch). Single identifier per call
 - **`checkOpenAccess`** — when the user asks whether a paper is open access or wants the best legal URL, license, and version (Unpaywall). Single identifier per call
+- **`verifyCitation`** — when the user pastes a citation and asks whether it is real or fabricated ("is this real?", "verify this DOI"). Cross-checks the *claimed* title (plus optional author/year/journal) against the record that actually resolves at the identifier. Use this — **not `resolveIdentifier`** — for "is this real?": the dominant AI fabrication pattern (Topaz et al., Lancet 2026) is a real, resolvable identifier paired with an invented title, which `resolveIdentifier` alone never catches. Single citation per call
 
 For end-to-end "raw IDs → exportable bibliography" workflows, chain `resolveIdentifier` → `formatCitation` → `exportCitation` in a single response — the tools compose. Example: "resolve these three IDs, format each in AMA, then export the set as BibTeX" exercises all three tools in one prompt.
 
@@ -41,6 +54,8 @@ The server tolerates DOI URLs (`https://doi.org/...`), `PMID:` / `PMC` prefixes,
 
 `checkRetraction` and `checkOpenAccess` take one identifier per call (parameter is `id`, not `text`). For multiple papers, loop one call per identifier.
 
+`verifyCitation` also takes one citation per call, with its own shape: a required `title` plus exactly one identifier (`doi`, `pmid`, `pmcid`, `arxiv`, `isbn`, `issn`, `ads`, or `whoIrisUrl`), and optional `author`, `year`, and `container` to sharpen the verdict.
+
 ### Step 4: Pick the style or format
 
 For `formatCitation`, the `style` parameter accepts:
@@ -55,6 +70,8 @@ For `exportCitation`, the `format` parameter accepts: `bib` (BibTeX), `ris`, `cs
 
 ## Guidelines
 
+- **Never fabricate a fallback.** If the Scholar Sidekick tools are unavailable, or a lookup fails or returns nothing, do **not** answer retraction, open-access, citation-formatting, or metadata questions from training data or an ad-hoc web search and present it as authoritative. The entire point of this skill is verified provenance — a guessed citation or a guessed retraction status is worse than no answer. State that the tool was unreachable (or returned no result) and stop.
+- **Read the `verifyCitation` verdict, don't just echo it.** `matched` = the claim agrees with the resolved record; `mismatch` = the identifier resolves but the title does not (the fabrication pattern — flag it clearly); `ambiguous` = the identifier resolves to one paper but the claimed title matches a *different* real paper (a wrong-identifier citation error, not a fabrication); `not_found` = neither identifier nor title resolves anywhere. Surface the verdict plus the specific mismatched fields, not a bare yes/no.
 - **Don't default the style silently.** Vancouver is the parameter default, but if the user did not name a style and any ambiguity exists, ask which style they want before formatting. Vancouver-by-default is correct for biomedical contexts; in humanities or law it would produce the wrong shape.
 - **Disambiguate Harvard and Chicago variants.** Both have multiple variants (`harvard-cite-them-right` vs other Harvard flavours; `chicago-author-date` vs `chicago-note-bibliography`). Ask the user which one they want when they say "Harvard" or "Chicago" without specifying.
 - **WHO IRIS is a real differentiator.** Most other citation tools cannot resolve WHO IRIS URLs. When the user shares a WHO publication, this skill is specifically the right tool.
