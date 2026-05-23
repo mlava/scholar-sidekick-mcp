@@ -26,7 +26,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         "low-confidence mismatches (catches informal-abbreviation false positives); LLM access is gated " +
         "to authenticated first-party keys and paid RapidAPI tiers — anonymous callers get " +
         "400 LLM_SCREEN_FORBIDDEN. " +
-        "Returns: { verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous' | 'parsing_error', confidence: 'high' | " +
+        "Returns: { verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence: 'high' | " +
         "'medium' | 'low', matched: <resolved record or null>, mismatches: [{field, claimed, resolved, " +
         "similarity}], candidates: [{item, registries, score}] (when title-search ran), _provenance: " +
         "{stages_run, resolved_via, registries_searched, llm_screen} }. " +
@@ -34,7 +34,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         "resolves but title does not match (Topaz fabrication pattern); 'ambiguous' = identifier " +
         "resolves to one paper but the claimed title matches a DIFFERENT paper found via title-search " +
         "(CITADEL 'citation error' subtype — wrong identifier for a real paper); 'not_found' = neither " +
-        "the identifier nor the title resolves anywhere; 'parsing_error' = the claim had no usable title. " +
+        "the identifier nor the title resolves anywhere. " +
         "No sibling tool overlaps: resolveIdentifier returns metadata for a known-good identifier; " +
         "verifyCitation is the only tool that cross-checks claimed title vs resolved metadata. " +
         "Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (or set SCHOLAR_SIDEKICK_URL " +

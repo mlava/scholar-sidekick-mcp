@@ -303,7 +303,7 @@ export interface VerifyProvenance {
 
 export interface VerifyApiResponse {
   ok: boolean;
-  verdict?: "matched" | "mismatch" | "not_found" | "ambiguous" | "parsing_error";
+  verdict?: "matched" | "mismatch" | "not_found" | "ambiguous";
   confidence?: "high" | "medium" | "low";
   /** Resolved BiblioItem when something resolved; null on not_found. */
   matched?: Record<string, unknown> | null;

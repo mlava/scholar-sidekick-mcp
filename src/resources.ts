@@ -128,6 +128,27 @@ Every response carries a \`_provenance\` block:
 Surface the provenance to the user when they ask "how did you decide?" or
 when they want to reproduce the result.
 
+(\`skipped_reason: "insufficient_claim"\` may also appear when the verifier
+short-circuited before searching — the claim had no identifier and a title too
+sparse to title-search safely; verdict is \`not_found\` in that case.)
+
+## Limitations — what the verifier does NOT tell you
+
+- It does **not** check whether the paper supports the citing claim. A
+  \`matched\` verdict means the citation points to a real, correctly-described
+  paper — not that the paper's findings back the sentence it is cited for.
+- It does **not** check retraction status. A correctly-cited retracted paper
+  returns \`matched\`. Use the \`checkRetraction\` tool for that signal.
+- It does **not** check open-access status. Use the \`checkOpenAccess\` tool.
+- At \`low\` confidence, \`matched\` is not proof of authenticity — surface the
+  confidence and, where it matters, recommend the user read the paper.
+
+Known weak cases — translated / transliterated titles, online-first vs print
+year, preprint-vs-journal versions, first-author-only author checking,
+registry-coverage gaps, ISBN edition ambiguity — are documented at
+https://scholar-sidekick.com/citation-integrity/known-failures.md. Surface the
+relevant caveat when a verdict lands in one of these categories.
+
 ## Reference
 
 Topaz M, Roguin N, Gupta P, Zhang Z, Peltonen L-M. *Fabricated citations:
