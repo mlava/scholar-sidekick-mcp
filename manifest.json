@@ -490,7 +490,7 @@
         "properties": {
           "verdict": {
             "type": "string",
-            "enum": ["matched", "mismatch", "not_found", "ambiguous", "parsing_error"],
+            "enum": ["matched", "mismatch", "not_found", "ambiguous"],
             "description": "Verdict on the cited citation."
           },
           "confidence": {
