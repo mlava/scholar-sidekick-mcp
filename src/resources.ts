@@ -124,6 +124,7 @@ Every response carries a \`_provenance\` block:
 | \`resolved_via\` | The resolver service that returned the matched record (e.g. \`"crossref"\`, \`"pubmed"\`, \`"crossref-search"\`). |
 | \`registries_searched\` | Per-registry status block, present only when title-search ran. Each entry: \`{registry: "crossref"\\|"pubmed"\\|"openalex", ok, count, reason?}\`. |
 | \`llm_screen\` | Present only when \`screenWithLlm: true\` was requested. Carries \`applied: true\` plus the LLM's verdict / reasoning / cost, or \`applied: false\` plus a reason code (\`verdict_not_eligible\` / \`daily_budget_exceeded\` / \`no_gateway\` / \`upstream_error\` / \`malformed_response\`). |
+| \`caveats\` | Point-of-use limitations of this verdict, each emitted only when deterministically true of the comparison: resolved via title-search (the supplied identifier did not resolve), an ISSN-only container identifier (verifies the journal, not a specific work), a non-Latin-script title (weaker character-level similarity), a publication-year gap, or a group author the record could not cross-check. Absent (not an empty array) on a clean high-confidence \`matched\`. Surface these to the user alongside the verdict. |
 
 Surface the provenance to the user when they ask "how did you decide?" or
 when they want to reproduce the result.
