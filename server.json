@@ -6,19 +6,26 @@
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.7.3",
+  "version": "0.8.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.7.3",
+      "version": "0.8.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Your RapidAPI key for the Scholar Sidekick API. Get one for free at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
-          "isRequired": true,
+          "description": "Optional first-party API key (ssk_) from https://scholar-sidekick.com/account. Raises rate limits and enables the verifier LLM screen; sent as Authorization: Bearer. Works anonymously without any key.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true,
+          "name": "SCHOLAR_API_KEY"
+        },
+        {
+          "description": "Optional RapidAPI key for paid/managed tiers; when set, calls route through the RapidAPI gateway. Get one at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
+          "isRequired": false,
           "format": "string",
           "isSecret": true,
           "name": "RAPIDAPI_KEY"
