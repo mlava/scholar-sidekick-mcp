@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { formatCitation } from "../client.js";
 import { ResolveIdentifierInput } from "../types.js";
-import { errorResult, missingKeyResult, normalizeIdentifiers } from "./helpers.js";
+import { errorResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerResolveTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -24,10 +24,10 @@ export function registerResolveTool(server: McpServer, config: ClientConfig): vo
         "Use formatCitation instead when the user wants a finished citation string in a specific style; " +
         "use exportCitation when they want a downloadable bibliography file. " +
         "Read-only and idempotent — safe to retry. " +
-        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
-        "without it the tool returns an isError configuration message. " +
-        "Rate limits follow the user's RapidAPI subscription plan; the underlying REST API caches " +
-        "repeated identical requests and surfaces cache state in the x-scholar-cache response header.",
+        "Works anonymously against the public Scholar Sidekick API (rate-limited free tier); " +
+        "set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher " +
+        "limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; the underlying " +
+        "REST API caches repeated identical requests and surfaces cache state in the x-scholar-cache response header.",
       inputSchema: ResolveIdentifierInput,
       annotations: {
         title: "Resolve Identifier",
@@ -38,8 +38,6 @@ export function registerResolveTool(server: McpServer, config: ClientConfig): vo
       },
     },
     async (input) => {
-      if (!config.rapidApiKey) return missingKeyResult();
-
       const result = await formatCitation(config, {
         text: normalizeIdentifiers(input.text),
         output: "json",

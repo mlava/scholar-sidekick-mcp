@@ -12,7 +12,8 @@
 - **Citation-fabrication detection** — `verifyCitation` cross-checks a claimed citation against the resolved record at its identifier, detecting the dominant AI-driven fabrication pattern documented by [Topaz et al. (Lancet 2026)](https://doi.org/10.1016/S0140-6736(26)00603-3) — real DOI + invented title — that simple identifier resolution cannot catch. Long-form explainer at [scholar-sidekick.com/citation-integrity](https://scholar-sidekick.com/citation-integrity).
 - **Composable workflow** — chain `resolveIdentifier` → `formatCitation` → `exportCitation` in one prompt for an end-to-end "raw IDs → exportable bibliography" pipeline.
 - **Provenance metadata on every response** — formatted output is followed by a metadata block (`requestId`, `formatter`, `styleUsed`, `warnings`) so the assistant can show users *which* engine produced each citation.
-- **REST API twin** — the same RapidAPI key works against the [Scholar Sidekick REST API](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) for non-MCP integrations.
+- **No key required** — works anonymously against the public Scholar Sidekick API (rate-limited free tier); add a free first-party `ssk_` key for higher limits, or a RapidAPI key for paid/managed tiers.
+- **REST API twin** — the same endpoints are available as the [Scholar Sidekick REST API](https://scholar-sidekick.com/docs) for non-MCP integrations.
 
 ## Tools
 
@@ -27,14 +28,17 @@
 
 ## Setup
 
-### Get a RapidAPI key
-
-1. Subscribe to [Scholar Sidekick on RapidAPI](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) (free tier available)
-2. Copy your RapidAPI key
+**No key required.** The server works anonymously against the public Scholar Sidekick API
+(`https://scholar-sidekick.com`) at a rate-limited free tier — just install and go. To raise
+your limits, create a free first-party `ssk_` key at
+[scholar-sidekick.com/account](https://scholar-sidekick.com/account) and set `SCHOLAR_API_KEY`.
+For paid/managed tiers, subscribe on
+[RapidAPI](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) and
+set `RAPIDAPI_KEY` (which routes calls through the RapidAPI gateway).
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). The `env` block is optional — omit it to run anonymously:
 
 ```json
 {
@@ -43,7 +47,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
       "command": "npx",
       "args": ["-y", "scholar-sidekick-mcp@latest"],
       "env": {
-        "RAPIDAPI_KEY": "your-rapidapi-key"
+        "SCHOLAR_API_KEY": "ssk_your-first-party-key"
       }
     }
   }
@@ -53,14 +57,18 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ### Claude Code
 
 ```bash
+# Anonymous (no key):
+claude mcp add scholar-sidekick -- npx -y scholar-sidekick-mcp@latest
+
+# With a free first-party key for higher limits:
 claude mcp add scholar-sidekick \
-  -e RAPIDAPI_KEY=your-rapidapi-key \
+  -e SCHOLAR_API_KEY=ssk_your-first-party-key \
   -- npx -y scholar-sidekick-mcp@latest
 ```
 
 ### Cursor / VS Code / Windsurf
 
-Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
+Add to `.cursor/mcp.json` or `.vscode/mcp.json` (the `env` block is optional):
 
 ```json
 {
@@ -69,7 +77,7 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json`:
       "command": "npx",
       "args": ["-y", "scholar-sidekick-mcp@latest"],
       "env": {
-        "RAPIDAPI_KEY": "your-rapidapi-key"
+        "SCHOLAR_API_KEY": "ssk_your-first-party-key"
       }
     }
   }
@@ -88,9 +96,13 @@ npx skills add mlava/scholar-sidekick-mcp
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `RAPIDAPI_KEY` | Yes | Your RapidAPI subscription key |
+| `SCHOLAR_API_KEY` | No | Free first-party `ssk_` key from [scholar-sidekick.com/account](https://scholar-sidekick.com/account); raises rate limits and enables the verifier's LLM screen. Sent as `Authorization: Bearer`. |
+| `RAPIDAPI_KEY` | No | RapidAPI subscription key for paid/managed tiers; when set, calls route through the RapidAPI gateway. |
 | `RAPIDAPI_HOST` | No | RapidAPI host (defaults to `scholar-sidekick.p.rapidapi.com`) |
+| `SCHOLAR_SIDEKICK_URL` | No | Override the API base URL (defaults to `https://scholar-sidekick.com`, or the RapidAPI gateway when `RAPIDAPI_KEY` is set). |
 | `SCHOLAR_SIDEKICK_TIMEOUT_MS` | No | Request timeout in milliseconds (default: 30000) |
+
+No key at all → anonymous, rate-limited free tier. With both `SCHOLAR_API_KEY` and `RAPIDAPI_KEY` set, RapidAPI takes precedence.
 
 ## Supported Citation Styles
 
@@ -163,7 +175,7 @@ Identifier resolution is deterministic given the same inputs and pinned upstream
 
 ## REST API
 
-For programmatic access outside of MCP clients, Scholar Sidekick is also available as a REST API on [RapidAPI](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick). Your same RapidAPI key works for both.
+For programmatic access outside of MCP clients, the same capabilities are available as a REST API at [scholar-sidekick.com](https://scholar-sidekick.com/docs) — anonymously, with a free first-party `ssk_` key (`Authorization: Bearer`), or via [RapidAPI](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) for paid tiers. Whichever credential you use here works there too.
 
 ## Development
 

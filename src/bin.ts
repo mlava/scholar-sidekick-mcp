@@ -25,12 +25,13 @@ async function checkConnection(baseUrl: string): Promise<void> {
 async function main(): Promise<void> {
   const config = createConfig();
 
-  if (config.rapidApiKey) {
-    await checkConnection(config.baseUrl);
-  } else {
+  await checkConnection(config.baseUrl);
+
+  if (!config.rapidApiKey && !config.scholarApiKey) {
     process.stderr.write(
-      "Scholar Sidekick MCP started without RAPIDAPI_KEY — tools will return a configuration message until a key is set. " +
-        "Get one at https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick\n",
+      `Scholar Sidekick MCP running anonymously against ${config.baseUrl} (rate-limited free tier). ` +
+        "Set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher limits, " +
+        "or RAPIDAPI_KEY for paid RapidAPI tiers.\n",
     );
   }
 

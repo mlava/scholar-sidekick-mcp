@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { checkOpenAccess } from "../client.js";
 import { CheckOpenAccessInput } from "../types.js";
-import { errorResult, missingKeyResult } from "./helpers.js";
+import { errorResult } from "./helpers.js";
 
 export function registerCheckOpenAccessTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -25,10 +25,10 @@ export function registerCheckOpenAccessTool(server: McpServer, config: ClientCon
         "result is null when no DOI could be resolved and reason explains why ('no_doi'). " +
         "No sibling tool overlaps this — resolveIdentifier returns metadata but not OA status. " +
         "Read-only and idempotent — safe to retry. " +
-        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
-        "without it the tool returns an isError configuration message. " +
-        "Rate limits follow the user's RapidAPI subscription plan; Unpaywall is queried server-side " +
-        "with its own caching.",
+        "Works anonymously against the public Scholar Sidekick API (rate-limited free tier); " +
+        "set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher " +
+        "limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; Unpaywall is " +
+        "queried server-side with its own caching.",
       inputSchema: CheckOpenAccessInput,
       annotations: {
         title: "Check Open Access",
@@ -39,8 +39,6 @@ export function registerCheckOpenAccessTool(server: McpServer, config: ClientCon
       },
     },
     async (input) => {
-      if (!config.rapidApiKey) return missingKeyResult();
-
       const result = await checkOpenAccess(config, { id: input.id.trim() });
 
       if (!result.ok || result.data?.ok === false) {

@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { formatCitation } from "../client.js";
 import { FormatCitationInput } from "../types.js";
-import { buildMetadata, errorResult, missingKeyResult, normalizeIdentifiers } from "./helpers.js";
+import { buildMetadata, errorResult, normalizeIdentifiers } from "./helpers.js";
 
 export function registerFormatTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -29,9 +29,9 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
         "Use resolveIdentifier instead when the user wants raw metadata to inspect or transform; " +
         "use exportCitation when they want a downloadable bibliography file. " +
         "Read-only and idempotent — safe to retry. " +
-        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
-        "without it the tool returns an isError configuration message. " +
-        "Rate limits follow the user's RapidAPI subscription plan.",
+        "Works anonymously against the public Scholar Sidekick API (rate-limited free tier); " +
+        "set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher " +
+        "limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier.",
       inputSchema: FormatCitationInput,
       annotations: {
         title: "Format Citation",
@@ -42,8 +42,6 @@ export function registerFormatTool(server: McpServer, config: ClientConfig): voi
       },
     },
     async (input) => {
-      if (!config.rapidApiKey) return missingKeyResult();
-
       const result = await formatCitation(config, {
         text: normalizeIdentifiers(input.text),
         style: input.style ?? undefined,

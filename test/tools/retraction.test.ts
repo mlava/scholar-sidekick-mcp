@@ -159,11 +159,26 @@ describe("checkRetraction tool", () => {
     await server.close();
   });
 
-  it("returns missing-key message when RAPIDAPI_KEY is unset", async () => {
+  it("works anonymously (no key) — calls upstream without auth headers", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        ok: true,
+        doi: "10.1038/test",
+        result: {
+          isRetracted: false,
+          hasCorrections: false,
+          hasConcern: false,
+          notices: [],
+          title: "A paper",
+        },
+      }),
+    );
+
     const { createMcpServer } = await import("@/server");
     const server = createMcpServer({
       baseUrl: "http://localhost:3000",
       timeoutMs: 5000,
+      // no rapidApiKey, no scholarApiKey → anonymous
     });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test", version: "0.0.1" });
@@ -174,10 +189,11 @@ describe("checkRetraction tool", () => {
       arguments: { id: "10.1038/test" },
     });
 
-    expect(result.isError).toBe(true);
-    const content = result.content as Array<{ type: string; text: string }>;
-    expect(content[0].text).toContain("RAPIDAPI_KEY");
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.isError).toBeFalsy();
+    expect(fetchMock).toHaveBeenCalled();
+    const call = fetchMock.mock.calls[0]!;
+    expect(call[1].headers["X-RapidAPI-Key"]).toBeUndefined();
+    expect(call[1].headers["Authorization"]).toBeUndefined();
 
     await client.close();
     await server.close();

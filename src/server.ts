@@ -11,7 +11,7 @@ import { registerResolveTool } from "./tools/resolve.js";
 import { registerVerifyCitationTool } from "./tools/verify.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.7.0";
+export const SERVER_VERSION = "0.8.0";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP turns academic identifiers into clean citations and surfaces retraction + open-access status.
 

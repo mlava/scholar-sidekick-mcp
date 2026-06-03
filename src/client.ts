@@ -13,19 +13,33 @@ export interface ClientConfig {
   baseUrl: string;
   rapidApiKey?: string;
   rapidApiHost?: string;
+  /** First-party `ssk_` API key (from /account). Sent as `Authorization: Bearer`. */
+  scholarApiKey?: string;
   timeoutMs: number;
 }
 
+/** Single source of truth for the client version (User-Agent + X-Scholar-Client). */
+export const CLIENT_VERSION = "0.8.0";
+
 const DEFAULT_RAPIDAPI_HOST = "scholar-sidekick.p.rapidapi.com";
+const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
 
 export function createConfig(): ClientConfig {
+  const rapidApiKey = process.env.RAPIDAPI_KEY || undefined;
+  const rapidApiHost = process.env.RAPIDAPI_HOST || DEFAULT_RAPIDAPI_HOST;
+
+  // Base URL precedence: explicit override > RapidAPI gateway (only when a RapidAPI
+  // key is set) > the canonical public site (anonymous / first-party `ssk_` path).
+  const baseUrl = (
+    process.env.SCHOLAR_SIDEKICK_URL ||
+    (rapidApiKey ? `https://${rapidApiHost}` : CANONICAL_BASE_URL)
+  ).replace(/\/$/, "");
+
   return {
-    baseUrl: (
-      process.env.SCHOLAR_SIDEKICK_URL ||
-      `https://${process.env.RAPIDAPI_HOST || DEFAULT_RAPIDAPI_HOST}`
-    ).replace(/\/$/, ""),
-    rapidApiKey: process.env.RAPIDAPI_KEY || undefined,
-    rapidApiHost: process.env.RAPIDAPI_HOST || DEFAULT_RAPIDAPI_HOST,
+    baseUrl,
+    rapidApiKey,
+    rapidApiHost,
+    scholarApiKey: process.env.SCHOLAR_API_KEY || undefined,
     timeoutMs: Number(process.env.SCHOLAR_SIDEKICK_TIMEOUT_MS) || 30_000,
   };
 }
@@ -44,12 +58,16 @@ export async function callApi<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "x-request-id": requestId,
-    "User-Agent": "scholar-sidekick-mcp/0.7.0",
+    "User-Agent": `scholar-sidekick-mcp/${CLIENT_VERSION}`,
+    "X-Scholar-Client": `scholar-sidekick-mcp/${CLIENT_VERSION}`,
   };
 
   if (config.rapidApiKey) {
     headers["X-RapidAPI-Key"] = config.rapidApiKey;
     headers["X-RapidAPI-Host"] = config.rapidApiHost || DEFAULT_RAPIDAPI_HOST;
+  } else if (config.scholarApiKey) {
+    // First-party `ssk_` key against the canonical site.
+    headers["Authorization"] = `Bearer ${config.scholarApiKey}`;
   }
 
   const controller = new AbortController();

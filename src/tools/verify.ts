@@ -6,7 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { verifyCitation } from "../client.js";
 import { VerifyCitationInput } from "../types.js";
-import { errorResult, missingKeyResult } from "./helpers.js";
+import { errorResult } from "./helpers.js";
 
 export function registerVerifyCitationTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -37,9 +37,10 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         "the identifier nor the title resolves anywhere. " +
         "No sibling tool overlaps: resolveIdentifier returns metadata for a known-good identifier; " +
         "verifyCitation is the only tool that cross-checks claimed title vs resolved metadata. " +
-        "Read-only and idempotent — safe to retry. Requires RAPIDAPI_KEY (or set SCHOLAR_SIDEKICK_URL " +
-        "to use a first-party key); without authentication the anonymous tier still works for the " +
-        "non-LLM path but the LLM screen is unavailable.",
+        "Read-only and idempotent — safe to retry. Works anonymously for the non-LLM path; the Stage 3 " +
+        "LLM screen requires authentication — set SCHOLAR_API_KEY (a free ssk_ key from " +
+        "https://scholar-sidekick.com/account) or use a paid RapidAPI tier. SCHOLAR_API_KEY also raises " +
+        "your rate limit.",
       inputSchema: VerifyCitationInput,
       annotations: {
         title: "Verify Citation",
@@ -50,8 +51,6 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
       },
     },
     async (input) => {
-      if (!config.rapidApiKey) return missingKeyResult();
-
       // Bundle the flat MCP input into the API's `claimed` + `options` shape.
       const {
         screenWithLlm,

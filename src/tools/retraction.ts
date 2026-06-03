@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ClientConfig } from "../client.js";
 import { checkRetraction } from "../client.js";
 import { CheckRetractionInput } from "../types.js";
-import { errorResult, missingKeyResult } from "./helpers.js";
+import { errorResult } from "./helpers.js";
 
 export function registerCheckRetractionTool(server: McpServer, config: ClientConfig): void {
   server.registerTool(
@@ -28,10 +28,10 @@ export function registerCheckRetractionTool(server: McpServer, config: ClientCon
         "explains why ('no_doi'). " +
         "No sibling tool overlaps this — resolveIdentifier returns metadata but not retraction status. " +
         "Read-only and idempotent — safe to retry. " +
-        "Requires RAPIDAPI_KEY (set via env var or Claude Desktop extension settings); " +
-        "without it the tool returns an isError configuration message. " +
-        "Rate limits follow the user's RapidAPI subscription plan; Crossref is queried server-side " +
-        "with its own caching.",
+        "Works anonymously against the public Scholar Sidekick API (rate-limited free tier); " +
+        "set SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) for higher " +
+        "limits, or RAPIDAPI_KEY for paid RapidAPI tiers. Rate limits follow your tier; Crossref is " +
+        "queried server-side with its own caching.",
       inputSchema: CheckRetractionInput,
       annotations: {
         title: "Check Retraction",
@@ -42,8 +42,6 @@ export function registerCheckRetractionTool(server: McpServer, config: ClientCon
       },
     },
     async (input) => {
-      if (!config.rapidApiKey) return missingKeyResult();
-
       const result = await checkRetraction(config, { id: input.id.trim() });
 
       if (!result.ok || result.data?.ok === false) {

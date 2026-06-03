@@ -88,6 +88,52 @@ describe("callApi", () => {
     expect(call[1]!.headers["X-RapidAPI-Host"]).toBeUndefined();
   });
 
+  it("attaches Authorization Bearer for a first-party key when no RapidAPI key is set", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const { callApi } = await import("@/client");
+    const config = {
+      baseUrl: "https://scholar-sidekick.com",
+      scholarApiKey: "ssk_test_abc",
+      timeoutMs: 5000,
+    };
+    await callApi(config, "/api/format", { text: "test" });
+
+    const call = fetchMock.mock.calls[0]!;
+    expect(call[1]!.headers["Authorization"]).toBe("Bearer ssk_test_abc");
+    expect(call[1]!.headers["X-RapidAPI-Key"]).toBeUndefined();
+  });
+
+  it("prefers RapidAPI over a first-party Bearer key when both are set", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const { callApi } = await import("@/client");
+    const config = {
+      baseUrl: "https://scholar-sidekick.p.rapidapi.com",
+      rapidApiKey: "rapid-key",
+      rapidApiHost: "scholar-sidekick.p.rapidapi.com",
+      scholarApiKey: "ssk_test_abc",
+      timeoutMs: 5000,
+    };
+    await callApi(config, "/api/format", { text: "test" });
+
+    const call = fetchMock.mock.calls[0]!;
+    expect(call[1]!.headers["X-RapidAPI-Key"]).toBe("rapid-key");
+    expect(call[1]!.headers["Authorization"]).toBeUndefined();
+  });
+
+  it("sends X-Scholar-Client and a versioned User-Agent", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const { callApi, CLIENT_VERSION } = await import("@/client");
+    const config = { baseUrl: "http://localhost:3000", timeoutMs: 5000 };
+    await callApi(config, "/api/format", { text: "test" });
+
+    const call = fetchMock.mock.calls[0]!;
+    expect(call[1]!.headers["X-Scholar-Client"]).toBe(`scholar-sidekick-mcp/${CLIENT_VERSION}`);
+    expect(call[1]!.headers["User-Agent"]).toBe(`scholar-sidekick-mcp/${CLIENT_VERSION}`);
+  });
+
   it("maps HTTP 401 to structured error", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ ok: false, error: "API key required", code: "AUTH_MISSING" }, 401),
@@ -229,11 +275,29 @@ describe("callApi", () => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults baseUrl to RapidAPI host when SCHOLAR_SIDEKICK_URL is unset", async () => {
+  it("defaults baseUrl to the canonical site when no RapidAPI key is set", async () => {
     const { createConfig } = await import("@/client");
     vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("RAPIDAPI_KEY", "");
+    const config = createConfig();
+    expect(config.baseUrl).toBe("https://scholar-sidekick.com");
+    vi.unstubAllEnvs();
+  });
+
+  it("defaults baseUrl to the RapidAPI gateway when a RapidAPI key is set", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("RAPIDAPI_KEY", "rapid-key");
     const config = createConfig();
     expect(config.baseUrl).toBe("https://scholar-sidekick.p.rapidapi.com");
+    vi.unstubAllEnvs();
+  });
+
+  it("reads SCHOLAR_API_KEY from env", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("SCHOLAR_API_KEY", "ssk_env_key");
+    const config = createConfig();
+    expect(config.scholarApiKey).toBe("ssk_env_key");
     vi.unstubAllEnvs();
   });
 
