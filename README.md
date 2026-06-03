@@ -13,6 +13,7 @@
 - **Composable workflow** — chain `resolveIdentifier` → `formatCitation` → `exportCitation` in one prompt for an end-to-end "raw IDs → exportable bibliography" pipeline.
 - **Provenance metadata on every response** — formatted output is followed by a metadata block (`requestId`, `formatter`, `styleUsed`, `warnings`) so the assistant can show users *which* engine produced each citation.
 - **No key required** — works anonymously against the public Scholar Sidekick API (rate-limited free tier); add a free first-party `ssk_` key for higher limits, or a RapidAPI key for paid/managed tiers.
+- **Hosted HTTP endpoint (no install)** — prefer not to run a local stdio server? Connect any HTTP-capable MCP client straight to `https://scholar-sidekick.com/api/mcp` (Streamable HTTP, same 6 tools). See [Hosted HTTP endpoint](#hosted-http-endpoint-no-install).
 - **REST API twin** — the same endpoints are available as the [Scholar Sidekick REST API](https://scholar-sidekick.com/docs) for non-MCP integrations.
 
 ## Tools
@@ -35,6 +36,12 @@ your limits, create a free first-party `ssk_` key at
 For paid/managed tiers, subscribe on
 [RapidAPI](https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick) and
 set `RAPIDAPI_KEY` (which routes calls through the RapidAPI gateway).
+
+> **Prefer zero install?** There's also a **hosted HTTP endpoint** at
+> `https://scholar-sidekick.com/api/mcp` (Streamable HTTP) — connect any HTTP-capable MCP
+> client directly, no `npx` needed. See [Hosted HTTP endpoint](#hosted-http-endpoint-no-install)
+> below. The stdio package documented here is the local-install alternative (and the path for
+> RapidAPI-keyed users).
 
 ### Claude Desktop
 
@@ -91,6 +98,35 @@ Install a companion [Agent Skill](https://skills.sh) that teaches Claude Code, C
 ```bash
 npx skills add mlava/scholar-sidekick-mcp
 ```
+
+## Hosted HTTP endpoint (no install)
+
+Don't want to run a local stdio server? Scholar Sidekick is also a **hosted Streamable HTTP
+MCP** at `https://scholar-sidekick.com/api/mcp` — the same six tools, no `npx`, no local
+process. It works **anonymously** (rate-limited free tier); add an `Authorization: Bearer ssk_…`
+header (a free key from [scholar-sidekick.com/account](https://scholar-sidekick.com/account)) for
+higher limits.
+
+Point any HTTP-capable MCP client at it:
+
+```json
+{
+  "mcpServers": {
+    "scholar-sidekick": {
+      "type": "http",
+      "url": "https://scholar-sidekick.com/api/mcp"
+    }
+  }
+}
+```
+
+In Claude Desktop, use **Settings → Connectors → Add custom connector** (or "Add HTTP server")
+and paste the URL. Add the bearer token in the client's header/auth field if you have one.
+
+Discovery: [`/.well-known/mcp.json`](https://scholar-sidekick.com/.well-known/mcp.json)
+(SEP-1649 server card) lists this endpoint plus the no-auth ChatGPT Apps endpoint at
+`/api/apps/mcp`. The stdio package above remains the local-install alternative and the path for
+RapidAPI-keyed users.
 
 ## Environment Variables
 
