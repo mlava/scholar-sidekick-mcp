@@ -5,8 +5,10 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    # Daily drift monitor: does the published website /.well-known/mcp.json
-    # still match what this server actually exposes? (live-parity job below)
+    # Daily drift monitor (live-parity job below): does the published website
+    # still match what this server pins? Two surfaces —
+    #   1. /.well-known/mcp.json tools/prompts/resources vs the running server
+    #   2. published OpenAPI paths vs the REST endpoints src/client.ts calls
     - cron: "0 7 * * *"
   workflow_dispatch:
 
@@ -47,3 +49,7 @@ jobs:
         env:
           CHECK_LIVE_WELL_KNOWN: "1"
         run: npx vitest run test/well-known-parity.test.ts
+      - name: Compare published OpenAPI paths to the client's pinned endpoints
+        env:
+          CHECK_LIVE_CONTRACT: "1"
+        run: npx vitest run test/endpoint-contract.test.ts
