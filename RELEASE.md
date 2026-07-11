@@ -103,6 +103,15 @@ without the asset and the one-click install 404s.
 Web fallback (no `gh`): <https://github.com/mlava/scholar-sidekick-mcp/releases/new>
 → choose/create tag `vX.Y.Z` → drag both `.mcpb` files in → Publish release.
 
+## 7. Refresh downstream listings that need a manual nudge
+
+Most registries re-sync on their own (see Propagation below), but **LobeHub
+caches its metadata and will not pick up the new version/card until you refresh
+it by hand**:
+
+- Open <https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp> and click the
+  **Refresh Metadata** button.
+
 ---
 
 ## Propagation (automatic, with lag — nothing to run)
@@ -127,4 +136,6 @@ mcp-publisher login github && mcp-publisher publish
 git commit -am "release: vX.Y.Z — <summary>" && git push
 gh release create vX.Y.Z scholar-sidekick-mcp.mcpb scholar-sidekick-mcp.smithery.mcpb \
   --target main --title "vX.Y.Z — <summary>" --notes "<what changed>"
+# then (manual, browser): click "Refresh Metadata" at
+#   https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp
 ```
