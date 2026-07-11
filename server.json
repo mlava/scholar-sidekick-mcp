@@ -1,17 +1,31 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.mlava/scholar-sidekick-mcp",
+  "title": "Scholar Sidekick",
   "description": "Resolve DOI/PMID/PMCID/ISBN/arXiv/ISSN/ADS/WHO IRIS to citations, exports, retraction, OA, verify.",
+  "websiteUrl": "https://scholar-sidekick.com/mcp",
+  "icons": [
+    {
+      "src": "https://scholar-sidekick.com/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    },
+    {
+      "src": "https://scholar-sidekick.com/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.8.0",
+  "version": "0.8.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.8.0",
+      "version": "0.8.1",
       "transport": {
         "type": "stdio"
       },
