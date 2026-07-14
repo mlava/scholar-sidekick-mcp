@@ -21,7 +21,7 @@ The version lives in six places — they must stay identical:
 | `manifest.json` | `version` |
 | `src/server.ts` | `SERVER_VERSION` |
 | `src/client.ts` | `CLIENT_VERSION` |
-| `.claude-plugin/plugin.json` | `version` |
+| `plugin/.claude-plugin/plugin.json` | `version` |
 
 Sanity check that nothing is stale (should list all six, nothing older):
 
@@ -37,14 +37,22 @@ Why each matters:
 - `server.json` is the official-registry entry. **Its version is immutable once
   published**, so even a metadata-only change (title, icon, description) needs a
   bump — and `packages[0].version` must point at a **real published npm version**.
-- `.claude-plugin/plugin.json` is the Claude Code plugin manifest (this repo is
-  also a **plugin marketplace** — see below). **A stale `version` here silently
-  freezes the plugin for installed users**: Claude Code pins the plugin to that
-  string and only ships an update when it changes. `claude plugin validate .`
-  warns if it is missing, but *cannot* tell that it is out of date — the
-  `git grep` check above is the only guard. Do not drop this field: omitting it
-  falls back to the git SHA, which fixes updates but fails `--strict` validation
-  and shows no version in the `/plugin` UI.
+- `plugin/.claude-plugin/plugin.json` is the Claude Code plugin manifest (this repo
+  is also a **plugin marketplace**; `.claude-plugin/marketplace.json` at the root
+  points at `./plugin`). **A stale `version` here silently freezes the plugin for
+  installed users**: Claude Code pins the plugin to that string and only ships an
+  update when it changes. `claude plugin validate .` warns if it is missing, but
+  *cannot* tell that it is out of date — the `git grep` check above is the only
+  guard. Do not drop this field: omitting it falls back to the git SHA, which fixes
+  updates but fails `--strict` validation and shows no version in `/plugin`.
+
+  > **Why the plugin lives in `plugin/`, not at the repo root.** A plugin root
+  > containing `package.json` makes Claude Code run `npm install` on it at install
+  > time — which pulled this repo's **~94MB of devDependencies** onto every user's
+  > machine (the MCP server itself is a *separate* npm package, fetched at runtime
+  > via `npx`). `plugin/` has no `package.json`, so the install stays small.
+  > The skill is therefore duplicated (`skills/` for `npx skills add` + crawlers,
+  > `plugin/skills/` for the plugin); `test/plugin-parity.test.ts` guards the drift.
 
 ## 2. Verify
 
