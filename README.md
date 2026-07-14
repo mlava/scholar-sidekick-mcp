@@ -73,6 +73,21 @@ claude mcp add scholar-sidekick \
   -- npx -y scholar-sidekick-mcp@latest
 ```
 
+### Claude Code plugin (server + skill in one step)
+
+This repo is also a **Claude Code plugin marketplace**. Installing the plugin wires
+up the MCP server *and* the companion agent skill together — no separate
+`claude mcp add`, no `env` block:
+
+```bash
+/plugin marketplace add mlava/scholar-sidekick-mcp
+/plugin install scholar-sidekick@scholar-sidekick
+```
+
+The plugin runs the server anonymously (no key). For higher rate limits, add a free
+`ssk_` key from [scholar-sidekick.com/account](https://scholar-sidekick.com/account)
+via `claude mcp add` as shown above, or use the hosted endpoint below.
+
 ### Cursor / VS Code / Windsurf
 
 Add to `.cursor/mcp.json` or `.vscode/mcp.json` (the `env` block is optional):

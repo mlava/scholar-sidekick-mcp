@@ -1,7 +1,7 @@
 # Releasing `scholar-sidekick-mcp`
 
 Releases are **manual** — CI (`.github/workflows/ci.yml`) runs typecheck + tests
-only, no publish automation. Every release bumps one version across **five
+only, no publish automation. Every release bumps one version across **six
 files**, publishes to **npm** and the **official MCP registry**, and cuts a
 **GitHub Release** with the two `.mcpb` bundles attached.
 
@@ -10,9 +10,9 @@ tag (e.g. `v0.8.1`). Tag convention is `vX.Y.Z`.
 
 ---
 
-## 1. Bump the version in all five files
+## 1. Bump the version in all six files
 
-The version lives in five places — they must stay identical:
+The version lives in six places — they must stay identical:
 
 | File | Field |
 |---|---|
@@ -21,8 +21,9 @@ The version lives in five places — they must stay identical:
 | `manifest.json` | `version` |
 | `src/server.ts` | `SERVER_VERSION` |
 | `src/client.ts` | `CLIENT_VERSION` |
+| `.claude-plugin/plugin.json` | `version` |
 
-Sanity check that nothing is stale (should list all five, nothing older):
+Sanity check that nothing is stale (should list all six, nothing older):
 
 ```bash
 git grep -n "X\.Y\.Z" -- . ':(exclude)package-lock.json'
@@ -36,6 +37,14 @@ Why each matters:
 - `server.json` is the official-registry entry. **Its version is immutable once
   published**, so even a metadata-only change (title, icon, description) needs a
   bump — and `packages[0].version` must point at a **real published npm version**.
+- `.claude-plugin/plugin.json` is the Claude Code plugin manifest (this repo is
+  also a **plugin marketplace** — see below). **A stale `version` here silently
+  freezes the plugin for installed users**: Claude Code pins the plugin to that
+  string and only ships an update when it changes. `claude plugin validate .`
+  warns if it is missing, but *cannot* tell that it is out of date — the
+  `git grep` check above is the only guard. Do not drop this field: omitting it
+  falls back to the git SHA, which fixes updates but fails `--strict` validation
+  and shows no version in the `/plugin` UI.
 
 ## 2. Verify
 

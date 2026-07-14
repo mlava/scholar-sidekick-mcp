@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "scholar-sidekick",
+  "displayName": "Scholar Sidekick",
+  "version": "0.8.2",
+  "description": "Catch AI-fabricated citations: verifyCitation cross-checks a claimed title against the real record at its identifier, detecting the dominant real-DOI + invented-title pattern (Topaz et al., Lancet 2026) that simple DOI resolution cannot catch. Also checks retraction and open-access status, and resolves eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
+  "author": {
+    "name": "Scholar Sidekick",
+    "url": "https://scholar-sidekick.com"
+  },
+  "homepage": "https://scholar-sidekick.com/mcp",
+  "repository": "https://github.com/mlava/scholar-sidekick-mcp",
+  "license": "MIT",
+  "keywords": [
+    "citations",
+    "citation-verification",
+    "fabrication-detection",
+    "bibliography",
+    "academic",
+    "doi",
+    "pmid",
+    "arxiv",
+    "bibtex",
+    "ris",
+    "retraction",
+    "open-access"
+  ],
+  "mcpServers": {
+    "scholar-sidekick": {
+      "command": "npx",
+      "args": ["-y", "scholar-sidekick-mcp@latest"]
+    }
+  }
+}
