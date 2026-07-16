@@ -157,10 +157,20 @@ export const VerifyCitationInput = {
     .string()
     .max(50)
     .optional()
-    .describe("arXiv ID (e.g. '2301.08745' or 'arXiv:2301.08745'; old-style 'hep-ph/0501023' accepted)."),
-  issn: z.string().max(50).optional().describe("ISSN for journal-level resolution."),
+    .describe(
+      "arXiv ID (e.g. '2301.08745' or 'arXiv:2301.08745'; old-style 'hep-ph/0501023' accepted).",
+    ),
+  issn: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("ISSN for journal-level resolution."),
   ads: z.string().max(50).optional().describe("NASA ADS bibcode (19 chars)."),
-  whoIrisUrl: z.string().max(2000).optional().describe("WHO IRIS URL (https://iris.who.int/...)."),
+  whoIrisUrl: z
+    .string()
+    .max(2000)
+    .optional()
+    .describe("WHO IRIS URL (https://iris.who.int/...)."),
   author: z
     .string()
     .max(200)
@@ -174,17 +184,77 @@ export const VerifyCitationInput = {
     .min(0)
     .max(9999)
     .optional()
-    .describe("Publication year as cited. Wrong year alone does not flip the verdict, but >=2-year gap from the resolved record lowers confidence."),
+    .describe(
+      "Publication year as cited. Wrong year alone does not flip the verdict, but >=2-year gap from the resolved record lowers confidence.",
+    ),
   container: z
     .string()
     .max(500)
     .optional()
-    .describe("Journal or container name as cited (e.g. 'The Lancet', 'Neuroscience'). Soft signal — surfaced as a mismatch field but does not gate the verdict."),
+    .describe(
+      "Journal or container name as cited (e.g. 'The Lancet', 'Neuroscience'). Soft signal — surfaced as a mismatch field but does not gate the verdict.",
+    ),
   screenWithLlm: z
     .boolean()
     .optional()
     .describe(
       "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false.",
+    ),
+};
+
+// A single pre-parsed citation for the auditBibliography `claims[]` path.
+const AuditClaim = z.object({
+  title: z
+    .string()
+    .max(2000)
+    .describe("Title as cited. Required for each claim."),
+  doi: z.string().max(200).optional(),
+  pmid: z.string().max(50).optional(),
+  pmcid: z.string().max(50).optional(),
+  isbn: z.string().max(50).optional(),
+  arxiv: z.string().max(50).optional(),
+  issn: z.string().max(50).optional(),
+  ads: z.string().max(50).optional(),
+  whoIrisUrl: z.string().max(2000).optional(),
+  author: z
+    .string()
+    .max(200)
+    .optional()
+    .describe("First-author family name as cited."),
+  year: z.number().int().min(0).max(9999).optional(),
+  container: z.string().max(500).optional(),
+});
+
+export const AuditBibliographyInput = {
+  bibliography: z
+    .string()
+    .max(128 * 1024)
+    .optional()
+    .describe(
+      "Raw bibliography text to parse and audit — BibTeX, RIS, or CSL-JSON. Provide EITHER this or `claims`, not both. Format is auto-detected; override with `format`. Capped at 25 entries per call (excess dropped, reported via `truncated`).",
+    ),
+  format: z
+    .enum(["bibtex", "ris", "csl-json"])
+    .optional()
+    .describe("Override format auto-detection for `bibliography`."),
+  claims: z
+    .array(AuditClaim)
+    .max(25)
+    .optional()
+    .describe(
+      "Pre-parsed citations to audit — an alternative to `bibliography` for agents that already hold structured references. Each needs a `title` plus whatever identifiers the citation carries.",
+    ),
+  checks: z
+    .array(z.enum(["retraction"]))
+    .optional()
+    .describe(
+      "Per-entry enrichment checks. Defaults to ['retraction'] (flags retracted / corrected / expression-of-concern works via Crossref + Retraction Watch, keyed on each resolved DOI). Pass [] to skip.",
+    ),
+  screenWithLlm: z
+    .boolean()
+    .optional()
+    .describe(
+      "Opt-in Stage 3 LLM screen applied per entry (same gating as verifyCitation). Default false.",
     ),
 };
 
@@ -310,6 +380,19 @@ export interface VerifyApiResponse {
   mismatches?: VerifyMismatch[];
   candidates?: VerifyCandidate[];
   _provenance?: VerifyProvenance;
+  /** Set on the error envelope (ok: false). */
+  error?: string;
+  code?: string;
+  requestId?: string;
+}
+
+export interface AuditApiResponse {
+  ok: boolean;
+  format?: string | null;
+  entries?: Array<Record<string, unknown>>;
+  parseErrors?: Array<Record<string, unknown>>;
+  truncated?: number;
+  summary?: Record<string, unknown>;
   /** Set on the error envelope (ok: false). */
   error?: string;
   code?: string;

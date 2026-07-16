@@ -17,6 +17,7 @@ import { describe, expect, it } from "vitest";
  */
 const EXPECTED = {
   tools: [
+    "auditBibliography",
     "checkOpenAccess",
     "checkRetraction",
     "exportCitation",
@@ -24,11 +25,25 @@ const EXPECTED = {
     "resolveIdentifier",
     "verifyCitation",
   ].sort(),
-  prompts: ["batch_format", "export", "format", "open_access", "resolve", "retraction", "verify"].sort(),
-  resources: ["supported-formats", "supported-identifiers", "supported-styles", "verify-verdicts"].sort(),
+  prompts: [
+    "batch_format",
+    "export",
+    "format",
+    "open_access",
+    "resolve",
+    "retraction",
+    "verify",
+  ].sort(),
+  resources: [
+    "supported-formats",
+    "supported-identifiers",
+    "supported-styles",
+    "verify-verdicts",
+  ].sort(),
 };
 
-const names = (xs: { name: string }[]): string[] => xs.map((x) => x.name).sort();
+const names = (xs: { name: string }[]): string[] =>
+  xs.map((x) => x.name).sort();
 
 async function introspectServer(): Promise<{
   tools: string[];
@@ -42,9 +57,13 @@ async function introspectServer(): Promise<{
     rapidApiKey: "test-key",
   });
 
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "parity-test", version: "0.0.1" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  await Promise.all([
+    server.connect(serverTransport),
+    client.connect(clientTransport),
+  ]);
 
   const [tools, prompts, resources] = await Promise.all([
     client.listTools(),
@@ -75,17 +94,26 @@ describe("well-known parity (server surface ⇄ website /.well-known/mcp.json)",
     async () => {
       const surface = await introspectServer();
 
-      const res = await fetch("https://scholar-sidekick.com/.well-known/mcp.json", {
-        signal: AbortSignal.timeout(10_000),
-      });
+      const res = await fetch(
+        "https://scholar-sidekick.com/.well-known/mcp.json",
+        {
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
       expect(res.ok, `fetch returned ${res.status}`).toBe(true);
       const card = (await res.json()) as {
-        capabilities: { tools: string[]; prompts: string[]; resources: string[] };
+        capabilities: {
+          tools: string[];
+          prompts: string[];
+          resources: string[];
+        };
       };
 
       expect([...card.capabilities.tools].sort()).toEqual(surface.tools);
       expect([...card.capabilities.prompts].sort()).toEqual(surface.prompts);
-      expect([...card.capabilities.resources].sort()).toEqual(surface.resources);
+      expect([...card.capabilities.resources].sort()).toEqual(
+        surface.resources,
+      );
     },
   );
 });

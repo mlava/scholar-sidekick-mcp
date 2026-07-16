@@ -1,5 +1,6 @@
 import type {
   ApiResult,
+  AuditApiResponse,
   FormatApiResponse,
   OaApiResponse,
   RetractionApiResponse,
@@ -19,7 +20,7 @@ export interface ClientConfig {
 }
 
 /** Single source of truth for the client version (User-Agent + X-Scholar-Client). */
-export const CLIENT_VERSION = "0.8.2";
+export const CLIENT_VERSION = "0.8.3";
 
 const DEFAULT_RAPIDAPI_HOST = "scholar-sidekick.p.rapidapi.com";
 const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
@@ -92,7 +93,10 @@ export async function callApi<T>(
     if (!res.ok) {
       let errorMsg = `HTTP ${res.status}`;
       try {
-        const errBody = (await res.json()) as { error?: string; message?: string };
+        const errBody = (await res.json()) as {
+          error?: string;
+          message?: string;
+        };
         errorMsg = errBody.error ?? errBody.message ?? errorMsg;
       } catch {
         /* use status text */
@@ -193,4 +197,16 @@ export async function verifyCitation(
   },
 ): Promise<ApiResult<VerifyApiResponse>> {
   return callApi<VerifyApiResponse>(config, "/api/verify", input);
+}
+
+export async function auditBibliography(
+  config: ClientConfig,
+  input: {
+    bibliography?: string;
+    format?: string;
+    claims?: Array<Record<string, unknown>>;
+    options?: { screen_with_llm?: boolean; checks?: string[] };
+  },
+): Promise<ApiResult<AuditApiResponse>> {
+  return callApi<AuditApiResponse>(config, "/api/audit", input);
 }

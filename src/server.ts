@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { type ClientConfig, createConfig } from "./client.js";
 import { registerPrompts } from "./prompts.js";
 import { registerResources } from "./resources.js";
+import { registerAuditBibliographyTool } from "./tools/audit.js";
 import { registerCheckOpenAccessTool } from "./tools/openAccess.js";
 import { registerCheckRetractionTool } from "./tools/retraction.js";
 import { registerExportTool } from "./tools/export.js";
@@ -11,7 +12,7 @@ import { registerResolveTool } from "./tools/resolve.js";
 import { registerVerifyCitationTool } from "./tools/verify.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.8.2";
+export const SERVER_VERSION = "0.8.3";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP is a citation-integrity server: it catches fabricated citations, surfaces retraction and open-access status, and turns academic identifiers into clean citations.
 
@@ -27,6 +28,7 @@ When to use this server:
 
 Tool selection:
 - verifyCitation — when the question is "is this citation real?". Cross-checks the claimed title against the record the identifier actually resolves to. Use this, NOT resolveIdentifier: resolveIdentifier alone never catches the dominant fabrication pattern, because the identifier resolves fine. Returns matched / mismatch (fabrication) / ambiguous (citation error) / not_found.
+- auditBibliography — when the input is a WHOLE bibliography rather than a single citation (a pasted reference list, a .bib / .ris file, "check all these at once"). Runs the verifyCitation check plus a retraction lookup on every entry and returns a per-entry verdict table + a corpus summary. Accepts raw BibTeX / RIS / CSL-JSON text or a claims[] array; capped at 25 entries per call.
 - checkRetraction — when the user asks whether a single work has been retracted, corrected, or flagged with an expression of concern (Crossref / Retraction Watch)
 - checkOpenAccess — when the user asks whether a single work is openly accessible or wants the best legal URL/license/version (Unpaywall)
 - resolveIdentifier — when the user wants raw structured metadata for a KNOWN-GOOD identifier (returns CSL JSON: title, authors, journal, year, identifiers)
@@ -56,6 +58,7 @@ export function createMcpServer(config?: ClientConfig): McpServer {
   // AI engines summarise a server from its first tools, and burying verifyCitation
   // last had them describing Scholar Sidekick as a formatter.
   registerVerifyCitationTool(server, cfg);
+  registerAuditBibliographyTool(server, cfg);
   registerCheckRetractionTool(server, cfg);
   registerCheckOpenAccessTool(server, cfg);
   registerResolveTool(server, cfg);

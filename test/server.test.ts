@@ -13,15 +13,23 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function jsonResponse(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
+function jsonResponse(
+  body: unknown,
+  status = 200,
+  extra: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "x-request-id": "rid-int", ...extra },
+    headers: {
+      "content-type": "application/json",
+      "x-request-id": "rid-int",
+      ...extra,
+    },
   });
 }
 
 describe("MCP Server integration", () => {
-  it("lists all six tools", async () => {
+  it("lists all seven tools", async () => {
     const { createMcpServer } = await import("@/server");
     const server = createMcpServer({
       baseUrl: "http://localhost:3000",
@@ -29,14 +37,19 @@ describe("MCP Server integration", () => {
       rapidApiKey: "test-key",
     });
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual([
+      "auditBibliography",
       "checkOpenAccess",
       "checkRetraction",
       "exportCitation",
@@ -52,7 +65,12 @@ describe("MCP Server integration", () => {
   it("calls formatCitation tool end-to-end", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse(
-        { ok: true, formatter: "builtin", styleUsed: "apa", text: "Smith, J. (2020). Test." },
+        {
+          ok: true,
+          formatter: "builtin",
+          styleUsed: "apa",
+          text: "Smith, J. (2020). Test.",
+        },
         200,
         { "x-scholar-formatter": "builtin", "x-scholar-style-used": "apa" },
       ),
@@ -65,10 +83,14 @@ describe("MCP Server integration", () => {
       rapidApiKey: "test-key",
     });
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const result = await client.callTool({
       name: "formatCitation",
@@ -76,9 +98,9 @@ describe("MCP Server integration", () => {
     });
 
     expect(result.isError).toBeFalsy();
-    const textContent = (result.content as Array<{ type: string; text: string }>).find(
-      (c) => c.type === "text" && !c.text.startsWith("\n---"),
-    );
+    const textContent = (
+      result.content as Array<{ type: string; text: string }>
+    ).find((c) => c.type === "text" && !c.text.startsWith("\n---"));
     expect(textContent?.text).toContain("Smith, J. (2020). Test.");
 
     await client.close();
@@ -104,10 +126,14 @@ describe("MCP Server integration", () => {
       rapidApiKey: "test-key",
     });
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const result = await client.callTool({
       name: "exportCitation",
@@ -124,7 +150,10 @@ describe("MCP Server integration", () => {
 
   it("calls resolveIdentifier tool end-to-end", async () => {
     const items = [
-      { title: "Resolved Paper", identifiers: [{ type: "doi", value: "10.1038/test" }] },
+      {
+        title: "Resolved Paper",
+        identifiers: [{ type: "doi", value: "10.1038/test" }],
+      },
     ];
     fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true, items }));
 
@@ -135,10 +164,14 @@ describe("MCP Server integration", () => {
       rapidApiKey: "test-key",
     });
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const result = await client.callTool({
       name: "resolveIdentifier",
@@ -161,13 +194,17 @@ describe("MCP Server integration", () => {
     // Call without config argument to hit the `config ?? createConfig()` branch
     const server = createMcpServer();
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const { tools } = await client.listTools();
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(7);
 
     await client.close();
     await server.close();
@@ -175,7 +212,9 @@ describe("MCP Server integration", () => {
   });
 
   it("propagates API errors as isError=true", async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: false, error: "Rate limit exceeded" }, 429));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ ok: false, error: "Rate limit exceeded" }, 429),
+    );
 
     const { createMcpServer } = await import("@/server");
     const server = createMcpServer({
@@ -184,10 +223,14 @@ describe("MCP Server integration", () => {
       rapidApiKey: "test-key",
     });
 
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test-client", version: "0.0.1" });
 
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const result = await client.callTool({
       name: "formatCitation",

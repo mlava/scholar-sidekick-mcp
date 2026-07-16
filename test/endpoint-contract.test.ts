@@ -29,6 +29,7 @@ import { describe, expect, it } from "vitest";
 
 // The `/api/*` paths this server's client pins. Keep sorted.
 const PINNED_ENDPOINTS = [
+  "/api/audit",
   "/api/export",
   "/api/format",
   "/api/oa-check",
@@ -55,7 +56,9 @@ describe("endpoint contract (client REST paths ⇄ website OpenAPI)", () => {
   it.skipIf(!process.env.CHECK_LIVE_CONTRACT)(
     "every pinned endpoint is still a documented path in the published OpenAPI spec",
     async () => {
-      const res = await fetch(OPENAPI_URL, { signal: AbortSignal.timeout(10_000) });
+      const res = await fetch(OPENAPI_URL, {
+        signal: AbortSignal.timeout(10_000),
+      });
       expect(res.ok, `fetch returned ${res.status}`).toBe(true);
       const spec = (await res.json()) as { paths: Record<string, unknown> };
       const documented = Object.keys(spec.paths);

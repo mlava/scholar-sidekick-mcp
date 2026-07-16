@@ -8,24 +8,28 @@
     {
       "src": "https://scholar-sidekick.com/icon-512.png",
       "mimeType": "image/png",
-      "sizes": ["512x512"]
+      "sizes": [
+        "512x512"
+      ]
     },
     {
       "src": "https://scholar-sidekick.com/icon.svg",
       "mimeType": "image/svg+xml",
-      "sizes": ["any"]
+      "sizes": [
+        "any"
+      ]
     }
   ],
   "repository": {
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.8.2",
+  "version": "0.8.3",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.8.2",
+      "version": "0.8.3",
       "transport": {
         "type": "stdio"
       },

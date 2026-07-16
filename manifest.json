@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Catch AI-fabricated citations: verifyCitation cross-checks a claimed title against the real record at its identifier, detecting the dominant real-DOI + invented-title pattern (Topaz et al., Lancet 2026) that simple DOI resolution cannot catch. Also checks retraction and open-access status, and resolves eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
   "long_description": "Scholar Sidekick MCP is a citation-integrity server for AI assistants. Its primary tool, verifyCitation, cross-checks a claimed citation against the record its identifier actually resolves to — catching the dominant AI fabrication pattern documented by Topaz et al. (Lancet 2026): a real, resolvable DOI paired with an invented title. This is the failure mode that defeats the usual advice of 'follow the DOI and see if it resolves' — fabricated citations resolve cleanly, and only a title-versus-record comparison exposes them. Topaz et al. found 1 in 277 biomedical papers in early 2026 contained at least one fabricated reference. verifyCitation returns a verdict of matched, mismatch (the fabrication pattern), ambiguous (the identifier resolves to one paper but the claimed title matches another — a citation error), or not_found, with a confidence score and a provenance block. Two further integrity checks sit alongside it: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Underpinning all three is a resolver covering eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) — broader coverage than DOI-only verifiers. Once a citation is verified, the same identifiers can be formatted in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet) or exported to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The resolve, format, and export tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation for an end-to-end 'raw IDs → exportable bibliography' workflow. Every formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation. Accuracy is measured against a public, immutable validation fixture at scholar-sidekick.com/citation-integrity, which includes three of the Topaz fabricated citations verbatim. Works anonymously; an optional free ssk_ key raises rate limits.",
   "author": {
@@ -284,6 +284,155 @@
       },
       "annotations": {
         "title": "Verify Citation",
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "auditBibliography",
+      "title": "Audit Bibliography",
+      "description": "Verify a WHOLE bibliography in one call — the batch counterpart to verifyCitation. Each entry runs the same fabrication check (real, resolvable identifier paired with a title that does NOT match the resolved paper; Topaz et al., Lancet 2026) plus a retraction lookup, and the tool returns a per-entry verdict table and a corpus summary. Use when the user pastes a reference list, a .bib / .ris file, or asks to 'check all these citations at once' / 'audit my bibliography' / 'which of these references are fake or retracted'. Input: EITHER bibliography (raw BibTeX / RIS / CSL-JSON text — format auto-detected) OR claims (an array of pre-parsed {title + identifier} objects), not both. Capped at 25 entries per call; excess is dropped and reported via truncated. checks defaults to ['retraction'] (pass [] to skip); screenWithLlm opt-in per entry (same auth gating as verifyCitation). Returns { format, entries[], parseErrors[], truncated, summary } where each entry carries { index, sourceKey?, status: 'ok'|'error', verdict: 'matched'|'mismatch'|'not_found'|'ambiguous', confidence, matched, mismatches, retraction, _provenance } and summary rolls up { total, matched, mismatch, ambiguous, not_found, errored, retracted }. Per-entry leniency: one entry that fails to resolve becomes status:'error' without failing the batch. This audits citation IDENTITY (does each identifier resolve to the claimed work, and is it retracted) — it does NOT check whether a source supports the claim it is cited for. Read-only and idempotent. Works anonymously for the non-LLM path; SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) or a paid RapidAPI tier raises rate limits and enables the optional LLM screen.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "bibliography": {
+            "type": "string",
+            "description": "Raw bibliography text to parse and audit — BibTeX, RIS, or CSL-JSON. Provide EITHER this or claims, not both. Format auto-detected; override with format. Capped at 25 entries per call.",
+            "maxLength": 131072
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "bibtex",
+              "ris",
+              "csl-json"
+            ],
+            "description": "Override format auto-detection for bibliography."
+          },
+          "claims": {
+            "type": "array",
+            "maxItems": 25,
+            "description": "Pre-parsed citations to audit — an alternative to bibliography. Each needs a title plus whatever identifiers the citation carries.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "doi": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "pmid": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "pmcid": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "isbn": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "arxiv": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "issn": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "ads": {
+                  "type": "string",
+                  "maxLength": 50
+                },
+                "whoIrisUrl": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "author": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "year": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9999
+                },
+                "container": {
+                  "type": "string",
+                  "maxLength": 500
+                }
+              },
+              "required": [
+                "title"
+              ]
+            }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "retraction"
+              ]
+            },
+            "description": "Per-entry enrichment checks. Defaults to ['retraction']. Pass [] to skip the retraction lookup."
+          },
+          "screenWithLlm": {
+            "type": "boolean",
+            "description": "Opt-in Stage 3 LLM screen applied per entry (same gating as verifyCitation). Default false."
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Detected input format, or null for the claims[] path."
+          },
+          "entries": {
+            "type": "array",
+            "description": "One result per verifiable entry: { index, sourceKey?, status, verdict, confidence, matched, mismatches, retraction, _provenance }.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "parseErrors": {
+            "type": "array",
+            "description": "Entries that could not be parsed or lacked a title: { index, error, message }.",
+            "items": {
+              "type": "object"
+            }
+          },
+          "truncated": {
+            "type": "number",
+            "description": "Count of entries dropped beyond the 25-entry cap."
+          },
+          "summary": {
+            "type": "object",
+            "description": "Corpus roll-up: { total, matched, mismatch, ambiguous, not_found, errored, retracted }."
+          }
+        },
+        "required": [
+          "format",
+          "entries",
+          "parseErrors",
+          "truncated",
+          "summary"
+        ]
+      },
+      "annotations": {
+        "title": "Audit Bibliography",
         "readOnlyHint": true,
         "destructiveHint": false,
         "idempotentHint": true,
