@@ -1,9 +1,20 @@
 # Releasing `scholar-sidekick-mcp`
 
-Releases are **manual** — CI (`.github/workflows/ci.yml`) runs typecheck + tests
-only, no publish automation. Every release bumps one version across **six
-files**, publishes to **npm** and the **official MCP registry**, and cuts a
-**GitHub Release** with the two `.mcpb` bundles attached.
+Releases are **mostly manual**. The one automated step is **npm publish**:
+cutting the GitHub Release triggers `.github/workflows/publish.yml`, which
+publishes to npm via **trusted publishing** (OIDC — no `NPM_TOKEN` exists) and
+attaches a **Sigstore provenance attestation** binding the tarball to the
+release commit. `ci.yml` still runs typecheck + tests only.
+
+Every release bumps one version across **six files**, publishes to **npm** and
+the **official MCP registry**, and cuts a **GitHub Release** with the two
+`.mcpb` bundles attached.
+
+> **Ordering changed when publishing was automated.** npm publish used to run
+> from your machine *before* the Release; it is now *caused by* the Release. So
+> `mcp-publisher publish` — which validates that the npm version already exists
+> — moved to **after** cutting the Release. Do not run `npm publish` by hand:
+> the workflow will then fail on the immutable-version error.
 
 Replace `X.Y.Z` below with the new version (e.g. `0.8.1`) and `vX.Y.Z` with the
 tag (e.g. `v0.8.1`). Tag convention is `vX.Y.Z`.
@@ -23,11 +34,17 @@ The version lives in six places — they must stay identical:
 | `src/client.ts` | `CLIENT_VERSION` |
 | `plugin/.claude-plugin/plugin.json` | `version` |
 
-Sanity check that nothing is stale (should list all six, nothing older):
+Sanity check that nothing is stale:
 
 ```bash
-git grep -n "X\.Y\.Z" -- . ':(exclude)package-lock.json'
+node scripts/check-version-lockstep.mjs
 ```
+
+This reads all six spots and diffs them against `package.json`, so a spot left
+behind on an older version *fails* — which a `git grep` for the new version
+cannot do (it only proves the spots you found are updated, never that one was
+missed). The publish workflow runs the same check, plus the release tag, before
+it will publish.
 
 Why each matters:
 
@@ -57,7 +74,7 @@ Why each matters:
 ## 2. Verify
 
 ```bash
-npm run typecheck && npm run test:ci
+node scripts/check-version-lockstep.mjs && npm run typecheck && npm run test:ci
 ```
 
 ## 3. Build + pack the `.mcpb` bundles
@@ -73,13 +90,45 @@ the source of truth; the slim Claude Desktop variant is derived + `mcpb`-validat
 - `scholar-sidekick-mcp.smithery.mcpb` — Smithery (full MCP schema)
 
 Needs network (pulls `@anthropic-ai/mcpb` via `npx`). These files are build
-artifacts — gitignored, never committed; they ship as Release assets in step 6.
+artifacts — gitignored, never committed; they ship as Release assets in step 4.
 
-## 4. Publish to npm
+## 4. Commit, push, and cut the GitHub Release (this publishes to npm)
 
 ```bash
-npm publish      # prepublishOnly rebuilds; ships the `mcpName` ownership field
+git commit -am "release: vX.Y.Z — <summary>"
+git push
+
+# creates the tag + release AND uploads both .mcpb assets in one step
+gh release create vX.Y.Z \
+  scholar-sidekick-mcp.mcpb scholar-sidekick-mcp.smithery.mcpb \
+  --target main \
+  --title "vX.Y.Z — <summary>" \
+  --notes "<what changed>"
 ```
+
+Publishing the Release fires `.github/workflows/publish.yml`, which re-runs
+typecheck + tests + the version-lockstep check (including that the tag matches
+`package.json`), then runs `npm publish --provenance`. **Do not `npm publish`
+by hand** — npm versions are immutable, so the workflow would then fail.
+
+Watch it and confirm the version actually landed:
+
+```bash
+gh run watch "$(gh run list --workflow=publish.yml --limit=1 --json databaseId -q '.[0].databaseId')"
+npm view scholar-sidekick-mcp version
+```
+
+If the workflow fails *after* the tag exists, fix forward and re-run it from the
+Actions tab (`workflow_dispatch`) — do not delete and re-cut the Release.
+
+**Why the `.mcpb` attachment matters:** the website's one-click Claude Desktop
+install links to
+`github.com/mlava/scholar-sidekick-mcp/releases/latest/download/scholar-sidekick-mcp.mcpb`,
+so the newest Release is what that `latest` download resolves to. Ship a Release
+without the asset and the one-click install 404s.
+
+Web fallback (no `gh`): <https://github.com/mlava/scholar-sidekick-mcp/releases/new>
+→ choose/create tag `vX.Y.Z` → drag both `.mcpb` files in → Publish release.
 
 ## 5. Publish to the official MCP registry — the **non-GitHub** registry
 
@@ -94,33 +143,11 @@ mcp-publisher login github
 mcp-publisher publish        # reads server.json; validates npm X.Y.Z exists + mcpName matches
 ```
 
-Run this **after** `npm publish` — it validates the npm version exists. If it
-reports the version isn't found, wait ~1 min for npm to propagate, then retry.
+Run this **after step 4's workflow has published to npm** — it validates the npm
+version exists. If it reports the version isn't found, wait ~1 min for npm to
+propagate, then retry.
 
-## 6. Commit, push, and cut the GitHub Release (with the `.mcpb` assets)
-
-```bash
-git commit -am "release: vX.Y.Z — <summary>"
-git push
-
-# creates the tag + release AND uploads both .mcpb assets in one step
-gh release create vX.Y.Z \
-  scholar-sidekick-mcp.mcpb scholar-sidekick-mcp.smithery.mcpb \
-  --target main \
-  --title "vX.Y.Z — <summary>" \
-  --notes "<what changed>"
-```
-
-**Why the `.mcpb` attachment matters:** the website's one-click Claude Desktop
-install links to
-`github.com/mlava/scholar-sidekick-mcp/releases/latest/download/scholar-sidekick-mcp.mcpb`,
-so the newest Release is what that `latest` download resolves to. Ship a Release
-without the asset and the one-click install 404s.
-
-Web fallback (no `gh`): <https://github.com/mlava/scholar-sidekick-mcp/releases/new>
-→ choose/create tag `vX.Y.Z` → drag both `.mcpb` files in → Publish release.
-
-## 7. Refresh downstream listings that need a manual nudge
+## 6. Refresh downstream listings that need a manual nudge
 
 Most registries re-sync on their own (see Propagation below), but **LobeHub
 caches its metadata and will not pick up the new version/card until you refresh
@@ -145,14 +172,25 @@ Verify the registry/gallery card a day or two later.
 ## Quick reference — the whole run
 
 ```bash
-# after bumping the 5 version fields:
+# after bumping the version in all six files:
+node scripts/check-version-lockstep.mjs
 npm run typecheck && npm run test:ci
 npm run pack
-npm publish
-mcp-publisher login github && mcp-publisher publish
 git commit -am "release: vX.Y.Z — <summary>" && git push
+
+# cutting the Release publishes to npm (publish.yml, with provenance)
 gh release create vX.Y.Z scholar-sidekick-mcp.mcpb scholar-sidekick-mcp.smithery.mcpb \
   --target main --title "vX.Y.Z — <summary>" --notes "<what changed>"
+gh run watch "$(gh run list --workflow=publish.yml --limit=1 --json databaseId -q '.[0].databaseId')"
+
+# only once npm has the new version:
+mcp-publisher login github && mcp-publisher publish
 # then (manual, browser): click "Refresh Metadata" at
 #   https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp
+```
+
+Verify provenance landed (should print an `attestations` block, not `undefined`):
+
+```bash
+npm view scholar-sidekick-mcp dist.attestations
 ```

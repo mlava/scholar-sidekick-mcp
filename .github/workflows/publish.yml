@@ -1,0 +1,64 @@
+name: Publish to npm
+
+# Publishes via npm **trusted publishing** (OIDC). There is deliberately no
+# NPM_TOKEN secret: npm trusts this specific repo + workflow filename instead of
+# a long-lived credential, and in exchange signs a Sigstore provenance
+# attestation binding the published tarball to this workflow and this commit.
+#
+# ── One-time setup on npmjs.com (do this before the first run) ───────────────
+# https://www.npmjs.com/package/scholar-sidekick-mcp/access
+#   → Trusted Publisher → GitHub Actions
+#       Organization or user: mlava
+#       Repository:           scholar-sidekick-mcp
+#       Workflow filename:    publish.yml      ← filename only, not a path
+#       Environment:          (leave blank)
+#       Allowed actions:      npm publish
+#
+# Renaming this file silently breaks publishing until that setting is updated to
+# match. The `repository` field in package.json must also keep pointing at
+# github.com/mlava/scholar-sidekick-mcp — a mismatch is a documented failure.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required — lets Actions mint the OIDC token npm verifies
+
+jobs:
+  publish:
+    name: npm publish (trusted publishing + provenance)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Trusted publishing requires Node >= 22.14.0 and npm >= 11.5.1.
+      # ci.yml pins Node 20 to match the `engines` floor this package supports
+      # for *consumers*; that floor does not constrain the machine publishing it.
+      # `registry-url` is intentionally omitted: it writes an .npmrc auth line
+      # expecting NODE_AUTH_TOKEN, which we do not have and must not need.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@latest
+      - run: npm --version
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:ci
+
+      # npm versions are immutable once published, so verify the six-file
+      # lockstep (RELEASE.md step 1) and the release tag BEFORE publishing.
+      - name: Check version lockstep
+        run: |
+          node scripts/check-version-lockstep.mjs \
+            ${{ github.event_name == 'release' && format('--expect-tag={0}', github.event.release.tag_name) || '' }}
+
+      # `prepublishOnly` rebuilds dist/mcp-server.mjs. `--provenance` is passed
+      # explicitly: npm documents it as automatic under trusted publishing, but
+      # that has been reported not to hold in practice, and the flag is a no-op
+      # when it does.
+      - run: npm publish --provenance --access public
