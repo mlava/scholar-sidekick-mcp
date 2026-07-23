@@ -20,7 +20,7 @@ export interface ClientConfig {
 }
 
 /** Single source of truth for the client version (User-Agent + X-Scholar-Client). */
-export const CLIENT_VERSION = "0.8.3";
+export const CLIENT_VERSION = "0.8.4";
 
 const DEFAULT_RAPIDAPI_HOST = "scholar-sidekick.p.rapidapi.com";
 const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
