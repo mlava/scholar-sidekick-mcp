@@ -10,7 +10,7 @@ const BATCH_TEXT_DESCRIPTION =
   "prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch " +
   "are supported and resolved in a single round trip.";
 
-export const FormatCitationInput = {
+export const FormatCitationInput = z.strictObject({
   text: z.string().describe(BATCH_TEXT_DESCRIPTION),
   style: z
     .string()
@@ -43,9 +43,9 @@ export const FormatCitationInput = {
       "Output format: 'text' (plain text, default), 'html' (marked-up HTML for web rendering), or " +
         "'json' (structured CSL items, equivalent to resolveIdentifier).",
     ),
-};
+});
 
-export const ExportCitationInput = {
+export const ExportCitationInput = z.strictObject({
   text: z.string().describe(BATCH_TEXT_DESCRIPTION),
   format: z
     .enum([
@@ -81,11 +81,11 @@ export const ExportCitationInput = {
       "BCP-47 locale tag (e.g. 'en-US') — used only when format='txt' and style is set. Ignored by " +
         "structured formats.",
     ),
-};
+});
 
-export const ResolveIdentifierInput = {
+export const ResolveIdentifierInput = z.strictObject({
   text: z.string().describe(BATCH_TEXT_DESCRIPTION),
-};
+});
 
 const SINGLE_ID_DESCRIPTION_BASE =
   "A single scholarly identifier to check. 1–500 characters. " +
@@ -93,7 +93,7 @@ const SINGLE_ID_DESCRIPTION_BASE =
   "the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline " +
   "batches are NOT accepted by this tool; loop one call per identifier for multiple papers.";
 
-export const CheckRetractionInput = {
+export const CheckRetractionInput = z.strictObject({
   id: z
     .string()
     .min(1)
@@ -103,9 +103,9 @@ export const CheckRetractionInput = {
         "Accepted: DOI, PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). " +
         "ISBN inputs are accepted but always return doi=null since books are not in the retraction graph.",
     ),
-};
+});
 
-export const CheckOpenAccessInput = {
+export const CheckOpenAccessInput = z.strictObject({
   id: z
     .string()
     .min(1)
@@ -114,7 +114,7 @@ export const CheckOpenAccessInput = {
       `${SINGLE_ID_DESCRIPTION_BASE} ` +
         "Accepted: DOI, PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes).",
     ),
-};
+});
 
 /* ─── verifyCitation ─────────────────────────────────────────────────── */
 // The /api/verify endpoint accepts a structured `claimed` object plus
@@ -123,7 +123,7 @@ export const CheckOpenAccessInput = {
 // The tool wrapper bundles them into `claimed` server-side. Only `title`
 // plus exactly one identifier is required; the rest refine the verdict.
 
-export const VerifyCitationInput = {
+export const VerifyCitationInput = z.strictObject({
   title: z
     .string()
     .min(1)
@@ -200,7 +200,7 @@ export const VerifyCitationInput = {
     .describe(
       "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false.",
     ),
-};
+});
 
 // A single pre-parsed citation for the auditBibliography `claims[]` path.
 const AuditClaim = z.object({
@@ -225,7 +225,7 @@ const AuditClaim = z.object({
   container: z.string().max(500).optional(),
 });
 
-export const AuditBibliographyInput = {
+export const AuditBibliographyInput = z.strictObject({
   bibliography: z
     .string()
     .max(128 * 1024)
@@ -256,7 +256,7 @@ export const AuditBibliographyInput = {
     .describe(
       "Opt-in Stage 3 LLM screen applied per entry (same gating as verifyCitation). Default false.",
     ),
-};
+});
 
 /* ─── API response types ──────────────────────────────────────────────── */
 

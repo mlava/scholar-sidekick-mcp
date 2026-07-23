@@ -74,13 +74,15 @@ Why each matters:
 ## 2. Verify
 
 ```bash
-npm run gen:tools
+npm run sync:surface
 node scripts/check-version-lockstep.mjs && npm run typecheck && npm run test:ci
 ```
 
-`gen:tools` rewrites `tools.json` from a live server instance — commit it if it changed.
-It is the tool surface static security scanners read (they can't execute the server or see
-`src/`), and `test/tools-json-parity.test.ts` fails the build if it drifts.
+`sync:surface` regenerates both published descriptions of the server's surface from a live
+instance — `tools.json` (what static security scanners read; they can't execute the server or
+see `src/`) and the `tools` / `prompts` / `resources` arrays inside `manifest.json` (what ships
+in the `.mcpb` bundles). Manifest-only fields — a prompt's `text`, a tool's `outputSchema` — are
+preserved. Commit whatever it changes; `test/surface-parity.test.ts` fails the build on drift.
 
 ## 3. Build + pack the `.mcpb` bundles
 
@@ -178,7 +180,7 @@ Verify the registry/gallery card a day or two later.
 
 ```bash
 # after bumping the version in all six files:
-npm run gen:tools            # refresh tools.json; commit it if it changed
+npm run sync:surface         # refresh tools.json + manifest.json; commit any change
 node scripts/check-version-lockstep.mjs
 npm run typecheck && npm run test:ci
 npm run pack
