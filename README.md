@@ -1,15 +1,16 @@
 # Scholar Sidekick MCP Server
 
-[MCP](https://modelcontextprotocol.io) server for [Scholar Sidekick](https://scholar-sidekick.com) — resolve any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) into 10,000+ CSL styles or nine export formats, plus retraction, open-access, and citation-fabrication-detection checks, from any AI assistant.
+[MCP](https://modelcontextprotocol.io) server for [Scholar Sidekick](https://scholar-sidekick.com) — catch AI-fabricated citations, one at a time or across a whole bibliography, from any AI assistant. It also checks retraction and open-access status, and resolves any scholarly identifier (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcode, WHO IRIS URL) into 10,000+ CSL styles or nine export formats.
 
 ## Highlights
 
+- **Citation-fabrication detection** — `verifyCitation` cross-checks a claimed citation against the resolved record at its identifier, detecting the dominant AI-driven fabrication pattern documented by [Topaz et al. (Lancet 2026)](https://doi.org/10.1016/S0140-6736(26)00603-3) — real DOI + invented title — that simple identifier resolution cannot catch. Long-form explainer at [scholar-sidekick.com/citation-integrity](https://scholar-sidekick.com/citation-integrity).
+- **Whole-bibliography audit** — `auditBibliography` runs that same check plus a retraction lookup across an entire reference list in one call, taking raw BibTeX, RIS, or CSL JSON and returning a per-entry verdict table with a corpus summary.
+- **Retraction & open-access checks** — `checkRetraction` surfaces retractions, corrections, and expressions of concern (Crossref / Retraction Watch); `checkOpenAccess` returns OA status and the best legal landing or PDF URL (Unpaywall). Both accept any identifier type and resolve it to a DOI under the hood.
 - **Eight identifier types out of the box** — DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, NASA ADS bibcodes, and WHO IRIS URLs (rare in citation tooling).
 - **Batch-friendly resolve / format / export** — each accepts a single identifier or a comma- or newline-separated list; the server normalises the list and resolves them in one round trip.
 - **10,000+ citation styles** — five hand-tuned builtins (Vancouver, AMA, APA, IEEE, CSE) plus any [CSL style ID](https://github.com/citation-style-language/styles), with alias and dependent-style resolution.
 - **Nine export formats** — BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, CSV, plain text.
-- **Retraction & open-access checks** — `checkRetraction` surfaces retractions, corrections, and expressions of concern (Crossref / Retraction Watch); `checkOpenAccess` returns OA status and the best legal landing or PDF URL (Unpaywall). Both accept any identifier type and resolve it to a DOI under the hood.
-- **Citation-fabrication detection** — `verifyCitation` cross-checks a claimed citation against the resolved record at its identifier, detecting the dominant AI-driven fabrication pattern documented by [Topaz et al. (Lancet 2026)](https://doi.org/10.1016/S0140-6736(26)00603-3) — real DOI + invented title — that simple identifier resolution cannot catch. Long-form explainer at [scholar-sidekick.com/citation-integrity](https://scholar-sidekick.com/citation-integrity).
 - **Composable workflow** — chain `resolveIdentifier` → `formatCitation` → `exportCitation` in one prompt for an end-to-end "raw IDs → exportable bibliography" pipeline.
 - **Provenance metadata on every response** — formatted output is followed by a metadata block (`requestId`, `formatter`, `styleUsed`, `warnings`) so the assistant can show users *which* engine produced each citation.
 - **No key required** — works anonymously against the public Scholar Sidekick API (rate-limited free tier); add a free first-party `ssk_` key for higher limits, or a RapidAPI key for paid/managed tiers.
@@ -20,13 +21,13 @@
 
 | Tool | Description |
 | --- | --- |
+| **verifyCitation** | Verify a claimed citation against the resolved record at its identifier. Detects the Topaz et al. (Lancet 2026) fabrication pattern — real DOI + invented title — that `resolveIdentifier` alone cannot catch. Returns one of four verdicts (`matched` / `mismatch` / `ambiguous` / `not_found`) plus per-field similarity scores and the resolved record so the user can see where the cited title and the actual paper diverged. Optional Stage 3 LLM screen rescues informal-abbreviation false positives (paid plans / first-party authentication only). One citation per call. |
+| **auditBibliography** | Run the `verifyCitation` check plus a retraction lookup across a *whole* bibliography in one call. Accepts raw BibTeX, RIS, or CSL-JSON text, or a pre-parsed `claims[]` array; returns a per-entry verdict table and a corpus summary. Capped at 25 entries per call. |
 | **resolveIdentifier** | Resolve DOIs, PMIDs, PMCIDs, ISBNs, arXiv IDs, ISSNs, ADS bibcodes, and WHO IRIS URLs to structured bibliographic metadata (CSL JSON). Accepts a single identifier or a comma/newline-separated batch. |
 | **formatCitation** | Format one or many identifiers into Vancouver, AMA, APA, IEEE, CSE, or any of 10,000+ CSL styles. Output as text, HTML, or JSON. Returns formatted citations plus a provenance metadata block. |
 | **exportCitation** | Export one or many identifiers to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, CSV, or plain text — ready to write to disk or hand to a reference manager. |
 | **checkRetraction** | Check whether a single work has been retracted, corrected, or had an expression of concern raised. Sourced from Crossref `updated-by` (Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup. One identifier per call. |
 | **checkOpenAccess** | Check whether a single work is openly accessible and where to find the best legal version. Sourced from Unpaywall. Returns OA status (gold/green/hybrid/bronze/closed), best landing/PDF URL, license, and version. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup. One identifier per call. |
-| **verifyCitation** | Verify a claimed citation against the resolved record at its identifier. Detects the Topaz et al. (Lancet 2026) fabrication pattern — real DOI + invented title — that `resolveIdentifier` alone cannot catch. Returns one of four verdicts (`matched` / `mismatch` / `ambiguous` / `not_found`) plus per-field similarity scores and the resolved record so the user can see where the cited title and the actual paper diverged. Optional Stage 3 LLM screen rescues informal-abbreviation false positives (paid plans / first-party authentication only). One citation per call. |
-| **auditBibliography** | Run the `verifyCitation` check plus a retraction lookup across a *whole* bibliography in one call. Accepts raw BibTeX, RIS, or CSL-JSON text, or a pre-parsed `claims[]` array; returns a per-entry verdict table and a corpus summary. Capped at 25 entries per call. |
 
 All seven tools are read-only (`readOnlyHint: true`, `destructiveHint: false`). The exact
 `tools/list` payload — descriptions, JSON Schemas, and annotations — is committed as
