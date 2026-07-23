@@ -13,7 +13,7 @@
 - **Composable workflow** — chain `resolveIdentifier` → `formatCitation` → `exportCitation` in one prompt for an end-to-end "raw IDs → exportable bibliography" pipeline.
 - **Provenance metadata on every response** — formatted output is followed by a metadata block (`requestId`, `formatter`, `styleUsed`, `warnings`) so the assistant can show users *which* engine produced each citation.
 - **No key required** — works anonymously against the public Scholar Sidekick API (rate-limited free tier); add a free first-party `ssk_` key for higher limits, or a RapidAPI key for paid/managed tiers.
-- **Hosted HTTP endpoint (no install)** — prefer not to run a local stdio server? Connect any HTTP-capable MCP client straight to `https://scholar-sidekick.com/api/mcp` (Streamable HTTP, same 6 tools). See [Hosted HTTP endpoint](#hosted-http-endpoint-no-install).
+- **Hosted HTTP endpoint (no install)** — prefer not to run a local stdio server? Connect any HTTP-capable MCP client straight to `https://scholar-sidekick.com/api/mcp` (Streamable HTTP, same 7 tools). See [Hosted HTTP endpoint](#hosted-http-endpoint-no-install).
 - **REST API twin** — the same endpoints are available as the [Scholar Sidekick REST API](https://scholar-sidekick.com/docs) for non-MCP integrations.
 
 ## Tools
@@ -26,6 +26,12 @@
 | **checkRetraction** | Check whether a single work has been retracted, corrected, or had an expression of concern raised. Sourced from Crossref `updated-by` (Retraction Watch). Resolves DOI/PMID/PMCID/arXiv/ADS inputs to a DOI before lookup. One identifier per call. |
 | **checkOpenAccess** | Check whether a single work is openly accessible and where to find the best legal version. Sourced from Unpaywall. Returns OA status (gold/green/hybrid/bronze/closed), best landing/PDF URL, license, and version. Resolves DOI/PMID/PMCID/arXiv/ISBN/ADS inputs to a DOI before lookup. One identifier per call. |
 | **verifyCitation** | Verify a claimed citation against the resolved record at its identifier. Detects the Topaz et al. (Lancet 2026) fabrication pattern — real DOI + invented title — that `resolveIdentifier` alone cannot catch. Returns one of four verdicts (`matched` / `mismatch` / `ambiguous` / `not_found`) plus per-field similarity scores and the resolved record so the user can see where the cited title and the actual paper diverged. Optional Stage 3 LLM screen rescues informal-abbreviation false positives (paid plans / first-party authentication only). One citation per call. |
+| **auditBibliography** | Run the `verifyCitation` check plus a retraction lookup across a *whole* bibliography in one call. Accepts raw BibTeX, RIS, or CSL-JSON text, or a pre-parsed `claims[]` array; returns a per-entry verdict table and a corpus summary. Capped at 25 entries per call. |
+
+All seven tools are read-only (`readOnlyHint: true`, `destructiveHint: false`). The exact
+`tools/list` payload — descriptions, JSON Schemas, and annotations — is committed as
+[`tools.json`](tools.json) and ships in the npm tarball, so you can review the full tool
+surface without running anything.
 
 ## Setup
 
@@ -106,6 +112,36 @@ Add to `.cursor/mcp.json` or `.vscode/mcp.json` (the `env` block is optional):
 }
 ```
 
+### Run in a container (sandboxed)
+
+The server speaks MCP over stdio and needs outbound HTTPS to the Scholar Sidekick API and
+nothing else — no filesystem access, no shell. If your policy is that MCP servers don't get
+host access, build the image in this repo and run it isolated:
+
+```bash
+docker build -t scholar-sidekick-mcp .
+```
+
+```json
+{
+  "mcpServers": {
+    "scholar-sidekick": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
+        "-e", "SCHOLAR_API_KEY",
+        "scholar-sidekick-mcp"
+      ]
+    }
+  }
+}
+```
+
+`-i` is required — that's the stdio pipe. Drop the `-e` line if you're running anonymously.
+No image is published to a registry; build it locally so you're running a bundle you built
+from source you can read.
+
 ### Agent skill (optional)
 
 Install a companion [Agent Skill](https://skills.sh) that teaches Claude Code, Cline, and other agents when and how to use these tools — it complements the server config above:
@@ -117,7 +153,7 @@ npx skills add mlava/scholar-sidekick-mcp
 ## Hosted HTTP endpoint (no install)
 
 Don't want to run a local stdio server? Scholar Sidekick is also a **hosted Streamable HTTP
-MCP** at `https://scholar-sidekick.com/api/mcp` — the same six tools, no `npx`, no local
+MCP** at `https://scholar-sidekick.com/api/mcp` — the same seven tools, no `npx`, no local
 process. It works **anonymously** (rate-limited free tier); add an `Authorization: Bearer ssk_…`
 header (a free key from [scholar-sidekick.com/account](https://scholar-sidekick.com/account)) for
 higher limits.

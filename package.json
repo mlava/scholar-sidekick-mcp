@@ -46,10 +46,13 @@
     "scholar-sidekick-mcp": "dist/mcp-server.mjs"
   },
   "files": [
-    "dist/mcp-server.mjs"
+    "SECURITY.md",
+    "dist/mcp-server.mjs",
+    "tools.json"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
+    "gen:tools": "node scripts/gen-tools.mjs",
     "pack": "npm run build && node scripts/pack.mjs",
     "test": "vitest run",
     "test:ci": "vitest run --allowOnly=false",

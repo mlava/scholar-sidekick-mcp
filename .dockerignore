@@ -1,0 +1,8 @@
+# The image is built from package.json + package-lock.json + tsconfig.json + scripts/ + src/.
+# Everything else is noise (or, in the case of the registry tokens, must never be copied in).
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!scripts
+!src
