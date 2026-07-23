@@ -32,17 +32,27 @@ jobs:
     name: npm publish (trusted publishing + provenance)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Trusted publishing requires Node >= 22.14.0 and npm >= 11.5.1.
       # ci.yml pins Node 20 to match the `engines` floor this package supports
       # for *consumers*; that floor does not constrain the machine publishing it.
+      #
       # `registry-url` is intentionally omitted: it writes an .npmrc auth line
       # expecting NODE_AUTH_TOKEN, which we do not have and must not need.
-      - uses: actions/setup-node@v4
+      # (setup-node v7 also dropped its dummy NODE_AUTH_TOKEN export, which used
+      # to interfere with OIDC.)
+      #
+      # `package-manager-cache: false` disables the npm cache for this job on
+      # purpose. This is the job whose output gets signed, so a poisoned or
+      # stale restored cache would be attested as genuine — the provenance
+      # binds the tarball to this commit, not to the integrity of its inputs.
+      # Trading ~20s of install time for that is the right side of the deal;
+      # ci.yml still caches, because nothing it produces is published.
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
+          package-manager-cache: false
       - run: npm install -g npm@latest
       - run: npm --version
 
