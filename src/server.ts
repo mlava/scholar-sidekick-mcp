@@ -12,7 +12,7 @@ import { registerResolveTool } from "./tools/resolve.js";
 import { registerVerifyCitationTool } from "./tools/verify.js";
 
 export const SERVER_NAME = "scholar-sidekick";
-export const SERVER_VERSION = "0.8.4";
+export const SERVER_VERSION = "0.8.5";
 
 const SERVER_INSTRUCTIONS = `Scholar Sidekick MCP is a citation-integrity server: it catches fabricated citations, surfaces retraction and open-access status, and turns academic identifiers into clean citations.
 

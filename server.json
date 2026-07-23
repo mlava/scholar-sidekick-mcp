@@ -24,25 +24,25 @@
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.8.4",
+  "version": "0.8.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.8.4",
+      "version": "0.8.5",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "description": "Not required. Scholar Sidekick works fully anonymously with no key and no signup — leave this unset for normal use. Set it only to raise rate limits and enable the verifier's optional LLM screen. Free first-party ssk_ key from https://scholar-sidekick.com/account; sent as Authorization: Bearer.",
+          "description": "Not required. Scholar Sidekick works fully anonymously with no key and no signup \u2014 leave this unset for normal use. Set it only to raise rate limits and enable the verifier's optional LLM screen. Free first-party ssk_ key from https://scholar-sidekick.com/account; sent as Authorization: Bearer.",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
           "name": "SCHOLAR_API_KEY"
         },
         {
-          "description": "Not required, and not the normal way to use this server — anonymous access is the default and needs no key at all. Only for customers on a paid RapidAPI plan; when set, calls route through the RapidAPI gateway instead of the direct API. https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
+          "description": "Not required, and not the normal way to use this server \u2014 anonymous access is the default and needs no key at all. Only for customers on a paid RapidAPI plan; when set, calls route through the RapidAPI gateway instead of the direct API. https://rapidapi.com/scholar-sidekick-scholar-sidekick-api/api/scholar-sidekick",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
