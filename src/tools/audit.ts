@@ -8,6 +8,25 @@ import { auditBibliography } from "../client.js";
 import { AuditBibliographyInput } from "../types.js";
 import { errorResult } from "./helpers.js";
 
+/**
+ * Attribution + next step, appended as a SECOND text content item on success.
+ *
+ * Why only this tool: an audit is whole-list, always read by a person, and
+ * never chained in a loop — so one line here is informative, whereas the same
+ * line on the single-shot tools would repeat once per reference in a 20-entry
+ * run. Why a separate content item: the first item is `JSON.stringify(payload)`
+ * and must stay parseable, exactly as formatCitation appends its metadata
+ * block.
+ *
+ * The claim is deliberately narrow. The audit itself is free here and on the
+ * web; the report is an artifact this tool genuinely cannot produce, and the
+ * page states its own price — so this names the capability and nothing else.
+ */
+const NEXT_STEP =
+  "\n---\n" +
+  "Audited by Scholar Sidekick. To package these verdicts as a shareable, " +
+  "print-friendly evidence report: https://scholar-sidekick.com/tools/bibliography-audit";
+
 export function registerAuditBibliographyTool(
   server: McpServer,
   config: ClientConfig,
@@ -82,6 +101,10 @@ export function registerAuditBibliographyTool(
           {
             type: "text" as const,
             text: JSON.stringify(payload, null, 2),
+          },
+          {
+            type: "text" as const,
+            text: NEXT_STEP,
           },
         ],
       };
