@@ -312,6 +312,82 @@ describe("callApi", () => {
     vi.unstubAllEnvs();
   });
 
+  it("ignores a placeholder SCHOLAR_API_KEY instead of sending a bogus bearer token", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("RAPIDAPI_KEY", "");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("SCHOLAR_API_KEY", "ssk_your-first-party-key");
+    const config = createConfig();
+
+    expect(config.scholarApiKey).toBeUndefined();
+    expect(config.warnings?.join(" ")).toContain("placeholder");
+    vi.unstubAllEnvs();
+  });
+
+  it("treats an angle-bracket SCHOLAR_API_KEY as a placeholder", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("RAPIDAPI_KEY", "");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("SCHOLAR_API_KEY", "ssk_<your key>");
+    const config = createConfig();
+
+    expect(config.scholarApiKey).toBeUndefined();
+    vi.unstubAllEnvs();
+  });
+
+  it("warns about a SCHOLAR_API_KEY without an ssk_ prefix but still uses it", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("RAPIDAPI_KEY", "");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("SCHOLAR_API_KEY", "not-a-first-party-key");
+    const config = createConfig();
+
+    expect(config.scholarApiKey).toBe("not-a-first-party-key");
+    expect(config.warnings?.join(" ")).toContain("ssk_");
+    vi.unstubAllEnvs();
+  });
+
+  it("warns that RAPIDAPI_KEY wins when both keys are set, and sends only RapidAPI headers", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    const { callApi, createConfig } = await import("@/client");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    vi.stubEnv("RAPIDAPI_KEY", "rapid-key");
+    vi.stubEnv("SCHOLAR_API_KEY", "ssk_real_key");
+    const config = createConfig();
+
+    expect(config.warnings?.join(" ")).toContain("alternative routes");
+
+    await callApi({ ...config, baseUrl: "http://localhost:3000" }, "/api/format", { text: "x" });
+    const headers = fetchMock.mock.calls[0]![1]!.headers as Record<string, string>;
+    expect(headers["X-RapidAPI-Key"]).toBe("rapid-key");
+    expect(headers["Authorization"]).toBeUndefined();
+    vi.unstubAllEnvs();
+  });
+
+  it("warns when SCHOLAR_SIDEKICK_URL diverts a RapidAPI key away from the gateway", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("SCHOLAR_API_KEY", "");
+    vi.stubEnv("RAPIDAPI_KEY", "rapid-key");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "http://localhost:3000");
+    const config = createConfig();
+
+    expect(config.baseUrl).toBe("http://localhost:3000");
+    expect(config.warnings?.join(" ")).toContain("will not honour it");
+    vi.unstubAllEnvs();
+  });
+
+  it("emits no warnings for a clean anonymous config", async () => {
+    const { createConfig } = await import("@/client");
+    vi.stubEnv("SCHOLAR_API_KEY", "");
+    vi.stubEnv("RAPIDAPI_KEY", "");
+    vi.stubEnv("SCHOLAR_SIDEKICK_URL", "");
+    const config = createConfig();
+
+    expect(config.warnings).toEqual([]);
+    vi.unstubAllEnvs();
+  });
+
   it("reads raw text response when expectRawText is set", async () => {
     fetchMock.mockResolvedValueOnce(textResponse("@article{key, title={Test}}"));
 

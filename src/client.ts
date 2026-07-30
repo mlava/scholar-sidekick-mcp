@@ -17,31 +17,90 @@ export interface ClientConfig {
   /** First-party `ssk_` API key (from /account). Sent as `Authorization: Bearer`. */
   scholarApiKey?: string;
   timeoutMs: number;
+  /**
+   * Non-fatal configuration problems, surfaced on stderr by `bin.ts`. Populated by
+   * `createConfig()`; never affects the request itself beyond the sanitising already
+   * applied here (a placeholder `SCHOLAR_API_KEY` is dropped, not sent).
+   */
+  warnings?: string[];
 }
 
 /** Single source of truth for the client version (User-Agent + X-Scholar-Client). */
-export const CLIENT_VERSION = "0.8.6";
+export const CLIENT_VERSION = "0.8.7";
 
 const DEFAULT_RAPIDAPI_HOST = "scholar-sidekick.p.rapidapi.com";
 const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
 
+/**
+ * Placeholder `SCHOLAR_API_KEY` values that appear in published install snippets.
+ * Pasting a snippet unedited must NOT authenticate as a bogus key: that 401s every
+ * call, while omitting the key entirely works fine on the anonymous tier.
+ */
+const PLACEHOLDER_API_KEYS = new Set(["ssk_your-first-party-key", "ssk_your_key_here"]);
+
+function isPlaceholderApiKey(value: string): boolean {
+  const normalised = value.trim().toLowerCase();
+  return (
+    PLACEHOLDER_API_KEYS.has(normalised) ||
+    normalised.startsWith("ssk_your") ||
+    normalised.includes("<")
+  );
+}
+
 export function createConfig(): ClientConfig {
-  const rapidApiKey = process.env.RAPIDAPI_KEY || undefined;
-  const rapidApiHost = process.env.RAPIDAPI_HOST || DEFAULT_RAPIDAPI_HOST;
+  const warnings: string[] = [];
+
+  const rapidApiKey = process.env.RAPIDAPI_KEY?.trim() || undefined;
+  const rapidApiHost = process.env.RAPIDAPI_HOST?.trim() || DEFAULT_RAPIDAPI_HOST;
+  const urlOverride = process.env.SCHOLAR_SIDEKICK_URL?.trim() || undefined;
+
+  let scholarApiKey = process.env.SCHOLAR_API_KEY?.trim() || undefined;
+
+  if (scholarApiKey && isPlaceholderApiKey(scholarApiKey)) {
+    warnings.push(
+      `SCHOLAR_API_KEY is still the example placeholder ("${scholarApiKey}") - ignoring it and ` +
+        "running on the anonymous tier. Replace it with a real ssk_ key from " +
+        "https://scholar-sidekick.com/account, or delete the entry entirely.",
+    );
+    scholarApiKey = undefined;
+  } else if (scholarApiKey && !scholarApiKey.startsWith("ssk_")) {
+    warnings.push(
+      'SCHOLAR_API_KEY does not start with "ssk_", so it is probably not a first-party key. ' +
+        "A RapidAPI subscription key belongs in RAPIDAPI_KEY instead.",
+    );
+  }
+
+  // SCHOLAR_API_KEY and RAPIDAPI_KEY are alternative auth routes, not complementary
+  // settings: `callApi` prefers RapidAPI and never sends both.
+  if (rapidApiKey && scholarApiKey) {
+    warnings.push(
+      "Both RAPIDAPI_KEY and SCHOLAR_API_KEY are set. These are alternative routes, not " +
+        "complementary: calls go through the RapidAPI gateway and SCHOLAR_API_KEY is ignored. " +
+        "Keep whichever one you mean to use and remove the other.",
+    );
+  }
 
   // Base URL precedence: explicit override > RapidAPI gateway (only when a RapidAPI
   // key is set) > the canonical public site (anonymous / first-party `ssk_` path).
   const baseUrl = (
-    process.env.SCHOLAR_SIDEKICK_URL ||
-    (rapidApiKey ? `https://${rapidApiHost}` : CANONICAL_BASE_URL)
+    urlOverride || (rapidApiKey ? `https://${rapidApiHost}` : CANONICAL_BASE_URL)
   ).replace(/\/$/, "");
+
+  if (rapidApiKey && urlOverride) {
+    warnings.push(
+      `SCHOLAR_SIDEKICK_URL overrides the RapidAPI gateway, so RAPIDAPI_KEY will be sent to ` +
+        `${baseUrl}, which will not honour it. Remove SCHOLAR_SIDEKICK_URL to use your ` +
+        "RapidAPI subscription.",
+    );
+  }
 
   return {
     baseUrl,
     rapidApiKey,
     rapidApiHost,
-    scholarApiKey: process.env.SCHOLAR_API_KEY || undefined,
+    scholarApiKey,
     timeoutMs: Number(process.env.SCHOLAR_SIDEKICK_TIMEOUT_MS) || 30_000,
+    warnings,
   };
 }
 

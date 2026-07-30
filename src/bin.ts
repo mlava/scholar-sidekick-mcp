@@ -27,6 +27,10 @@ async function main(): Promise<void> {
 
   await checkConnection(config.baseUrl);
 
+  for (const warning of config.warnings ?? []) {
+    process.stderr.write(`Scholar Sidekick MCP config warning: ${warning}\n`);
+  }
+
   if (!config.rapidApiKey && !config.scholarApiKey) {
     process.stderr.write(
       `Scholar Sidekick MCP running anonymously against ${config.baseUrl} (rate-limited free tier). ` +
