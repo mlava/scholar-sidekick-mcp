@@ -52,20 +52,24 @@ set `RAPIDAPI_KEY` (which routes calls through the RapidAPI gateway).
 
 ### Claude Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). The `env` block is optional — omit it to run anonymously:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows). No key, no `env` block:
 
 ```json
 {
   "mcpServers": {
     "scholar-sidekick": {
       "command": "npx",
-      "args": ["-y", "scholar-sidekick-mcp@latest"],
-      "env": {
-        "SCHOLAR_API_KEY": "ssk_your-first-party-key"
-      }
+      "args": ["-y", "scholar-sidekick-mcp@latest"]
     }
   }
 }
+```
+
+Only if you want higher rate limits, add an `env` block with a free `ssk_` key from
+[scholar-sidekick.com/account](https://scholar-sidekick.com/account):
+
+```json
+"env": { "SCHOLAR_API_KEY": "ssk_your-first-party-key" }
 ```
 
 ### Claude Code
@@ -97,21 +101,20 @@ via `claude mcp add` as shown above, or use the hosted endpoint below.
 
 ### Cursor / VS Code / Windsurf
 
-Add to `.cursor/mcp.json` or `.vscode/mcp.json` (the `env` block is optional):
+Add to `.cursor/mcp.json` or `.vscode/mcp.json`. No key needed:
 
 ```json
 {
   "mcpServers": {
     "scholar-sidekick": {
       "command": "npx",
-      "args": ["-y", "scholar-sidekick-mcp@latest"],
-      "env": {
-        "SCHOLAR_API_KEY": "ssk_your-first-party-key"
-      }
+      "args": ["-y", "scholar-sidekick-mcp@latest"]
     }
   }
 }
 ```
+
+For higher rate limits, add `"env": { "SCHOLAR_API_KEY": "ssk_your-first-party-key" }`.
 
 ### Run in a container (sandboxed)
 
@@ -131,7 +134,6 @@ docker build -t scholar-sidekick-mcp .
       "args": [
         "run", "-i", "--rm",
         "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
-        "-e", "SCHOLAR_API_KEY",
         "scholar-sidekick-mcp"
       ]
     }
@@ -139,7 +141,8 @@ docker build -t scholar-sidekick-mcp .
 }
 ```
 
-`-i` is required — that's the stdio pipe. Drop the `-e` line if you're running anonymously.
+`-i` is required — that's the stdio pipe. Add `"-e", "SCHOLAR_API_KEY",` to the args only if
+you are passing a key for higher limits.
 No image is published to a registry; build it locally so you're running a bundle you built
 from source you can read.
 
