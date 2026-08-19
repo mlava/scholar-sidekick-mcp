@@ -66,10 +66,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "^0.25.8",
     "typescript": "^5.9.3",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.9"
+    "vitest": "^4.1.11"
   }
 }
