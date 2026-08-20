@@ -282,3 +282,4 @@ npm run typecheck
 MIT
 
 [![MCP Badge](https://lobehub.com/badge/mcp/mlavercombe-scholar-sidekick-mcp?style=flat)](https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp)
+[![M8ven Verified](https://m8ven.ai/badge/mcp/mlava-scholar-sidekick-mcp-1laij3?variant=verified&v=9fd37dea34eaeca534acad5cd1d1c69c)](https://m8ven.ai/mcp/mlava-scholar-sidekick-mcp-1laij3)
