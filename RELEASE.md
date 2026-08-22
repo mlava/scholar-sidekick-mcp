@@ -163,6 +163,24 @@ it by hand**:
 - Open <https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp> and click the
   **Refresh Metadata** button.
 
+## 7. Bump the parity pins in the main `scholar-sidekick` repo
+
+The website repo self-reports this package's version in two constants that must
+mirror the npm release. `check-version-lockstep.mjs` cannot see them (different
+repo), so this checklist is the only guard — they sat three releases stale
+(0.8.5 vs 0.8.8) until 2026-08-22 because this step was missing.
+
+| File (in `mlava/scholar-sidekick`) | Field |
+|---|---|
+| `src/lib/mcp/server-card.ts` | `MCP_VERSION` — server card (both `.well-known` paths), A2A agent card, `ai-catalog.json` |
+| `src/lib/mcp/server.ts` | `SERVER_VERSION` — hosted `/api/mcp` `initialize` → `serverInfo.version` |
+| `test/integration/mcp-route.test.ts` | literal pin on the `serverInfo` assertion |
+
+Why it shows publicly: endpoint directories (e.g. licium.ai) probe the hosted
+`/api/mcp` and publish whatever `initialize` self-reports, so a stale
+`SERVER_VERSION` is visible on third-party cards. Bump both constants + the test
+pin, run the touched tests, commit — ships with the website's next deploy.
+
 ---
 
 ## Propagation (automatic, with lag — nothing to run)
@@ -195,6 +213,7 @@ gh run watch "$(gh run list --workflow=publish.yml --limit=1 --json databaseId -
 mcp-publisher login github && mcp-publisher publish
 # then (manual, browser): click "Refresh Metadata" at
 #   https://lobehub.com/mcp/mlavercombe-scholar-sidekick-mcp
+# then: bump MCP_VERSION + SERVER_VERSION (+ test pin) in mlava/scholar-sidekick — step 7
 ```
 
 Verify provenance landed (should print an `attestations` block, not `undefined`):
