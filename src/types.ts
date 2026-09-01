@@ -3,7 +3,8 @@ import { z } from "zod";
 /* ─── MCP tool input schemas ──────────────────────────────────────────── */
 
 const BATCH_TEXT_DESCRIPTION =
-  "One or more scholarly identifiers to process — DOI (with or without https://doi.org/), " +
+  "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a " +
+  "shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), " +
   "PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens " +
   "tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), " +
   "ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip " +
@@ -100,7 +101,8 @@ export const CheckRetractionInput = z.strictObject({
     .max(500)
     .describe(
       `${SINGLE_ID_DESCRIPTION_BASE} ` +
-        "Accepted: DOI, PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). " +
+        "Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, or " +
+        "NASA ADS bibcode (with or without prefixes). " +
         "ISBN inputs are accepted but always return doi=null since books are not in the retraction graph.",
     ),
 });
@@ -112,7 +114,8 @@ export const CheckOpenAccessInput = z.strictObject({
     .max(500)
     .describe(
       `${SINGLE_ID_DESCRIPTION_BASE} ` +
-        "Accepted: DOI, PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes).",
+        "Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, " +
+        "ISBN, or NASA ADS bibcode (with or without prefixes).",
     ),
 });
 
@@ -136,7 +139,7 @@ export const VerifyCitationInput = z.strictObject({
     .max(200)
     .optional()
     .describe(
-      "DOI as cited (with or without https://doi.org/ prefix). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
+      "DOI as cited (with or without https://doi.org/ prefix; a shortDOI alias such as 10/aabbe is accepted here too and expanded to the full DOI). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
     ),
   pmid: z
     .string()

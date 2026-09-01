@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "scholar-sidekick-mcp",
   "display_name": "Scholar Sidekick",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "description": "Catch AI-fabricated citations: verifyCitation cross-checks a claimed title against the real record at its identifier, detecting the dominant real-DOI + invented-title pattern (Topaz et al., Lancet 2026) that simple DOI resolution cannot catch. Also checks retraction and open-access status, and resolves eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, ADS, WHO IRIS) into 10,000+ CSL styles or nine export formats, single or batch.",
   "long_description": "Scholar Sidekick MCP is a citation-integrity server for AI assistants. Its primary tool, verifyCitation, cross-checks a claimed citation against the record its identifier actually resolves to — catching the dominant AI fabrication pattern documented by Topaz et al. (Lancet 2026): a real, resolvable DOI paired with an invented title. This is the failure mode that defeats the usual advice of 'follow the DOI and see if it resolves' — fabricated citations resolve cleanly, and only a title-versus-record comparison exposes them. Topaz et al. found 1 in 277 biomedical papers in early 2026 contained at least one fabricated reference. verifyCitation returns a verdict of matched, mismatch (the fabrication pattern), ambiguous (the identifier resolves to one paper but the claimed title matches another — a citation error), or not_found, with a confidence score and a provenance block. Two further integrity checks sit alongside it: checkRetraction surfaces retractions, corrections, and expressions of concern from Crossref / Retraction Watch; checkOpenAccess returns OA status and the best legal landing or PDF URL from Unpaywall. Underpinning all three is a resolver covering eight identifier types (DOI, PMID, PMCID, ISBN, arXiv, ISSN, NASA ADS bibcodes, WHO IRIS URLs) — broader coverage than DOI-only verifiers. Once a citation is verified, the same identifiers can be formatted in 10,000+ CSL styles (Vancouver, APA, AMA, IEEE, Chicago, Harvard, MLA, Nature, BMJ, Lancet) or exported to BibTeX, RIS, CSL JSON, EndNote (XML/Refer), RefWorks, MEDLINE, Zotero RDF, and CSV. The resolve, format, and export tools accept a single identifier or a comma/newline-separated batch, so an assistant can chain resolveIdentifier → formatCitation → exportCitation for an end-to-end 'raw IDs → exportable bibliography' workflow. Every formatted response carries a provenance metadata block (formatter, styleUsed, requestId, warnings) so users can see exactly which engine produced each citation. Accuracy is measured against a public, immutable validation fixture at scholar-sidekick.com/citation-integrity, which includes three of the Topaz fabricated citations verbatim. Works anonymously; an optional free ssk_ key raises rate limits.",
   "author": {
@@ -77,7 +77,7 @@
             "description": "The title as it appears in the cited reference. This is the field the verifier cross-checks against the resolved record at the supplied identifier. Required."
           },
           "doi": {
-            "description": "DOI as cited (with or without https://doi.org/ prefix). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
+            "description": "DOI as cited (with or without https://doi.org/ prefix; a shortDOI alias such as 10/aabbe is accepted here too and expanded to the full DOI). Provide whichever identifier(s) the cited reference carries; the verifier uses the first one in priority order doi > pmid > pmcid > arxiv > ads > isbn > issn > whoIrisUrl.",
             "type": "string",
             "maxLength": 200
           },
@@ -453,7 +453,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500,
-            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI, PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). ISBN inputs are accepted but always return doi=null since books are not in the retraction graph."
+            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, or NASA ADS bibcode (with or without prefixes). ISBN inputs are accepted but always return doi=null since books are not in the retraction graph."
           }
         },
         "required": [
@@ -558,7 +558,7 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 500,
-            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI, PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes)."
+            "description": "A single scholarly identifier to check. 1–500 characters. Non-DOI inputs are resolved to a DOI server-side before the lookup; if no DOI can be derived, the tool returns doi=null with reason='no_doi'. Pass exactly one identifier — comma/newline batches are NOT accepted by this tool; loop one call per identifier for multiple papers. Accepted: DOI (including a shortDOI alias such as 10/aabbe), PMID, PMCID, arXiv ID, ISBN, or NASA ADS bibcode (with or without prefixes)."
           }
         },
         "required": [
@@ -682,7 +682,7 @@
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
           }
         },
         "required": [
@@ -788,7 +788,7 @@
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
           },
           "style": {
             "description": "Citation style: 'vancouver' (default), 'ama', 'apa', 'ieee', 'cse', or any of 10,000+ CSL style IDs from citation-style-language/styles (e.g. 'chicago-author-date', 'harvard-cite-them-right', 'modern-language-association', 'nature', 'bmj', 'the-lancet'). Aliases and dependent styles resolve automatically — 'harvard' → 'harvard-cite-them-right'.",
@@ -870,7 +870,7 @@
         "properties": {
           "text": {
             "type": "string",
-            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
+            "description": "One or more scholarly identifiers to process — DOI (with or without https://doi.org/; a shortDOI alias such as 10/aabbe is also accepted and expanded to the full DOI), PMID (with or without 'PMID:' prefix), PMCID (e.g. PMC7793608), ISBN (10 or 13 digit, hyphens tolerated), arXiv ID (with or without 'arXiv:' prefix; old-style hep-ph/0501023 also accepted), ISSN, NASA ADS bibcode (19 chars), or WHO IRIS URL. Pass identifiers verbatim — do not strip prefixes. Multiple identifiers may be separated by newlines or commas; mixed types in one batch are supported and resolved in a single round trip."
           },
           "format": {
             "type": "string",

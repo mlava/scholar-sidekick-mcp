@@ -8,7 +8,7 @@ accept a single identifier or a comma- or newline-separated batch.
 
 | Type | Example | Notes |
 | --- | --- | --- |
-| DOI | \`10.1056/NEJMoa2033700\` | URL form (\`https://doi.org/...\`) also accepted |
+| DOI | \`10.1056/NEJMoa2033700\` | URL form (\`https://doi.org/...\`) also accepted. A shortDOI alias (\`10/aabbe\`, from shortdoi.org) counts as a DOI and is expanded to the full DOI before resolving |
 | PubMed ID | \`PMID:30049270\` or \`30049270\` | \`PMID:\` prefix optional |
 | PubMed Central ID | \`PMC7793608\` or \`PMCID:7793608\` | Either prefix accepted |
 | ISBN | \`9780192854087\` | Hyphens accepted (\`978-0-19-285408-7\`); 10 or 13 digit |
