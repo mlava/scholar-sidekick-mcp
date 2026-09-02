@@ -210,23 +210,83 @@ const AuditClaim = z.object({
   title: z
     .string()
     .max(2000)
-    .describe("Title as cited. Required for each claim."),
-  doi: z.string().max(200).optional(),
-  pmid: z.string().max(50).optional(),
-  pmcid: z.string().max(50).optional(),
-  isbn: z.string().max(50).optional(),
-  arxiv: z.string().max(50).optional(),
-  issn: z.string().max(50).optional(),
-  ads: z.string().max(50).optional(),
-  whoIrisUrl: z.string().max(2000).optional(),
+    .describe(
+      "Title exactly as the citation claims it. Required — the audit compares this against the title of the record the identifier actually resolves to, and that comparison is the fabrication check.",
+    ),
+  doi: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "DOI as cited, with or without a prefix ('10.1038/nphys1170' or a doi.org URL).",
+    ),
+  pmid: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("PubMed ID, digits only or 'PMID:' prefixed."),
+  pmcid: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("PubMed Central ID, e.g. 'PMC1234567'."),
+  isbn: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("ISBN-10 or ISBN-13; hyphens are tolerated."),
+  arxiv: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("arXiv ID, e.g. '2301.00001' or 'arXiv:2301.00001'."),
+  issn: z
+    .string()
+    .max(50)
+    .optional()
+    .describe(
+      "ISSN of the containing journal. Identifies a container, not a paper, so it cannot resolve an entry on its own — supply it alongside another identifier.",
+    ),
+  ads: z
+    .string()
+    .max(50)
+    .optional()
+    .describe("NASA ADS bibcode, e.g. '2019A&A...625A.135L'."),
+  whoIrisUrl: z
+    .string()
+    .max(2000)
+    .optional()
+    .describe("WHO IRIS publication URL."),
   author: z
     .string()
     .max(200)
     .optional()
-    .describe("First-author family name as cited."),
-  year: z.number().int().min(0).max(9999).optional(),
-  container: z.string().max(500).optional(),
+    .describe(
+      "First-author family name as cited. Refines the comparison; a disagreement here can downgrade a verdict to 'ambiguous'.",
+    ),
+  year: z
+    .number()
+    .int()
+    .min(0)
+    .max(9999)
+    .optional()
+    .describe(
+      "Publication year as cited. Refinement only — it never decides a verdict alone.",
+    ),
+  container: z
+    .string()
+    .max(500)
+    .optional()
+    .describe(
+      "Journal or book title as cited. Refinement only, same role as `year`.",
+    ),
 });
+
+/*
+ * Identifiers are all optional individually, but an entry with none of them can
+ * only be resolved by title search — which is slower and may return no
+ * candidate at all. Supply whatever the citation carries.
+ */
 
 export const AuditBibliographyInput = z.strictObject({
   bibliography: z

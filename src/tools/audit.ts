@@ -51,6 +51,15 @@ export function registerAuditBibliographyTool(
         "{ checked, doi, isRetracted, hasCorrections, hasConcern, notices } | null, _provenance }], " +
         "parseErrors: [{ index, error, message }], truncated, summary: { total, matched, mismatch, " +
         "ambiguous, not_found, errored, retracted } }. " +
+        "Reading the result: `index` is 1-BASED (entry 1 is the first reference) — do not add 1 again " +
+        "when reporting it. `sourceKey` is the entry's own key in the source file (BibTeX cite key, RIS " +
+        "`ID`, CSL-JSON `id`) and is the reliable way to point a user at the offending reference; it is " +
+        "absent on the claims[] path. `entries` and `parseErrors` share one index space, so a given " +
+        "input position appears in exactly one of them — report parseErrors as UNCHECKED, never as " +
+        "clean. `summary.total` counts verifiable entries only, excluding parseErrors and anything past " +
+        "the cap; `summary.retracted` is a separate axis from the verdict counts (an entry can be both " +
+        "matched and retracted), so never sum those fields. A non-zero `truncated` means the audit is " +
+        "incomplete — split the bibliography and call again. " +
         "Per-entry leniency: one entry that fails to resolve becomes status:'error' without failing the " +
         "batch. This audits citation IDENTITY (does each identifier resolve to the claimed work, and is " +
         "it retracted) — it does NOT check whether a source supports the claim it is cited for. " +

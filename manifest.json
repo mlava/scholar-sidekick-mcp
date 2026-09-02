@@ -294,7 +294,7 @@
     {
       "name": "auditBibliography",
       "title": "Audit Bibliography",
-      "description": "Verify a WHOLE bibliography in one call — the batch counterpart to verifyCitation. Each entry runs the same fabrication check (real, resolvable identifier paired with a title that does NOT match the resolved paper; Topaz et al., Lancet 2026) plus a retraction lookup, and the tool returns a per-entry verdict table and a corpus summary. Use when the user pastes a reference list, a .bib / .ris file, or asks to 'check all these citations at once' / 'audit my bibliography' / 'which of these references are fake or retracted'. Input: EITHER `bibliography` (raw BibTeX / RIS / CSL-JSON text — format auto-detected) OR `claims` (an array of pre-parsed {title + identifier} objects), not both. Capped at 25 entries per call; excess is dropped and reported via `truncated`. `checks` defaults to ['retraction'] (pass [] to skip); `screenWithLlm` opt-in per entry (same auth gating as verifyCitation). Returns: { format, entries: [{ index, sourceKey?, status: 'ok'|'error', verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence, matched, mismatches, retraction: { checked, doi, isRetracted, hasCorrections, hasConcern, notices } | null, _provenance }], parseErrors: [{ index, error, message }], truncated, summary: { total, matched, mismatch, ambiguous, not_found, errored, retracted } }. Per-entry leniency: one entry that fails to resolve becomes status:'error' without failing the batch. This audits citation IDENTITY (does each identifier resolve to the claimed work, and is it retracted) — it does NOT check whether a source supports the claim it is cited for. Read-only and idempotent. Works anonymously for the non-LLM path; SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) or a paid RapidAPI tier raises rate limits and enables the optional LLM screen.",
+      "description": "Verify a WHOLE bibliography in one call — the batch counterpart to verifyCitation. Each entry runs the same fabrication check (real, resolvable identifier paired with a title that does NOT match the resolved paper; Topaz et al., Lancet 2026) plus a retraction lookup, and the tool returns a per-entry verdict table and a corpus summary. Use when the user pastes a reference list, a .bib / .ris file, or asks to 'check all these citations at once' / 'audit my bibliography' / 'which of these references are fake or retracted'. Input: EITHER `bibliography` (raw BibTeX / RIS / CSL-JSON text — format auto-detected) OR `claims` (an array of pre-parsed {title + identifier} objects), not both. Capped at 25 entries per call; excess is dropped and reported via `truncated`. `checks` defaults to ['retraction'] (pass [] to skip); `screenWithLlm` opt-in per entry (same auth gating as verifyCitation). Returns: { format, entries: [{ index, sourceKey?, status: 'ok'|'error', verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence, matched, mismatches, retraction: { checked, doi, isRetracted, hasCorrections, hasConcern, notices } | null, _provenance }], parseErrors: [{ index, error, message }], truncated, summary: { total, matched, mismatch, ambiguous, not_found, errored, retracted } }. Reading the result: `index` is 1-BASED (entry 1 is the first reference) — do not add 1 again when reporting it. `sourceKey` is the entry's own key in the source file (BibTeX cite key, RIS `ID`, CSL-JSON `id`) and is the reliable way to point a user at the offending reference; it is absent on the claims[] path. `entries` and `parseErrors` share one index space, so a given input position appears in exactly one of them — report parseErrors as UNCHECKED, never as clean. `summary.total` counts verifiable entries only, excluding parseErrors and anything past the cap; `summary.retracted` is a separate axis from the verdict counts (an entry can be both matched and retracted), so never sum those fields. A non-zero `truncated` means the audit is incomplete — split the bibliography and call again. Per-entry leniency: one entry that fails to resolve becomes status:'error' without failing the batch. This audits citation IDENTITY (does each identifier resolve to the claimed work, and is it retracted) — it does NOT check whether a source supports the claim it is cited for. Read-only and idempotent. Works anonymously for the non-LLM path; SCHOLAR_API_KEY (a free ssk_ key from https://scholar-sidekick.com/account) or a paid RapidAPI tier raises rate limits and enables the optional LLM screen.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -322,51 +322,61 @@
                 "title": {
                   "type": "string",
                   "maxLength": 2000,
-                  "description": "Title as cited. Required for each claim."
+                  "description": "Title exactly as the citation claims it. Required — the audit compares this against the title of the record the identifier actually resolves to, and that comparison is the fabrication check."
                 },
                 "doi": {
+                  "description": "DOI as cited, with or without a prefix ('10.1038/nphys1170' or a doi.org URL).",
                   "type": "string",
                   "maxLength": 200
                 },
                 "pmid": {
+                  "description": "PubMed ID, digits only or 'PMID:' prefixed.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "pmcid": {
+                  "description": "PubMed Central ID, e.g. 'PMC1234567'.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "isbn": {
+                  "description": "ISBN-10 or ISBN-13; hyphens are tolerated.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "arxiv": {
+                  "description": "arXiv ID, e.g. '2301.00001' or 'arXiv:2301.00001'.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "issn": {
+                  "description": "ISSN of the containing journal. Identifies a container, not a paper, so it cannot resolve an entry on its own — supply it alongside another identifier.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "ads": {
+                  "description": "NASA ADS bibcode, e.g. '2019A&A...625A.135L'.",
                   "type": "string",
                   "maxLength": 50
                 },
                 "whoIrisUrl": {
+                  "description": "WHO IRIS publication URL.",
                   "type": "string",
                   "maxLength": 2000
                 },
                 "author": {
-                  "description": "First-author family name as cited.",
+                  "description": "First-author family name as cited. Refines the comparison; a disagreement here can downgrade a verdict to 'ambiguous'.",
                   "type": "string",
                   "maxLength": 200
                 },
                 "year": {
+                  "description": "Publication year as cited. Refinement only — it never decides a verdict alone.",
                   "type": "integer",
                   "minimum": 0,
                   "maximum": 9999
                 },
                 "container": {
+                  "description": "Journal or book title as cited. Refinement only, same role as `year`.",
                   "type": "string",
                   "maxLength": 500
                 }
