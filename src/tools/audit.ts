@@ -45,7 +45,9 @@ export function registerAuditBibliographyTool(
         "Input: EITHER `bibliography` (raw BibTeX / RIS / CSL-JSON text — format auto-detected) OR " +
         "`claims` (an array of pre-parsed {title + identifier} objects), not both. Capped at 25 entries " +
         "per call; excess is dropped and reported via `truncated`. `checks` defaults to ['retraction'] " +
-        "(pass [] to skip); `screenWithLlm` opt-in per entry (same auth gating as verifyCitation). " +
+        "(pass [] to skip); `semanticTitle` opt-in per entry (any tier; catches one-word title swaps, " +
+        "flagged → 'ambiguous' for review); `screenWithLlm` opt-in per entry (same auth gating as " +
+        "verifyCitation). " +
         "Returns: { format, entries: [{ index, sourceKey?, status: 'ok'|'error', verdict: 'matched' | " +
         "'mismatch' | 'not_found' | 'ambiguous', confidence, matched, mismatches, retraction: " +
         "{ checked, doi, isRetracted, hasCorrections, hasConcern, notices } | null, _provenance }], " +
@@ -76,20 +78,36 @@ export function registerAuditBibliographyTool(
       },
     },
     async (input) => {
-      const { bibliography, format, claims, checks, screenWithLlm } = input;
+      const {
+        bibliography,
+        format,
+        claims,
+        checks,
+        screenWithLlm,
+        semanticTitle,
+      } = input;
 
       const body: {
         bibliography?: string;
         format?: string;
         claims?: Array<Record<string, unknown>>;
-        options?: { screen_with_llm?: boolean; checks?: string[] };
+        options?: {
+          screen_with_llm?: boolean;
+          semantic_title?: boolean;
+          checks?: string[];
+        };
       } = {};
       if (bibliography !== undefined) body.bibliography = bibliography;
       if (format) body.format = format;
       if (claims) body.claims = claims as Array<Record<string, unknown>>;
 
-      const options: { screen_with_llm?: boolean; checks?: string[] } = {};
+      const options: {
+        screen_with_llm?: boolean;
+        semantic_title?: boolean;
+        checks?: string[];
+      } = {};
       if (screenWithLlm) options.screen_with_llm = true;
+      if (semanticTitle) options.semantic_title = true;
       if (checks) options.checks = checks;
       if (Object.keys(options).length) body.options = options;
 

@@ -99,6 +99,17 @@ what to do next — are described here for LLM context at decision time.
 | \`medium\` | Mostly clean but with a small mitigation (e.g. 1-year publication-date gap, slight author-name normalisation). |
 | \`low\` | Borderline: title similarity falls in the 0.7–0.92 range — same paper described informally or paraphrased? Without \`screenWithLlm: true\` the verifier returns the conservative answer; with the LLM screen enabled (paid plans / authenticated first-party only) the verdict can be upgraded. |
 
+## When to use the semantic title check
+
+Pass \`semanticTitle: true\` (any tier, no key needed) when the user wants a
+confident \`matched\` double-checked for a one-word change in a long title —
+"cardiac" → "renal", "with" → "without". Character-level similarity cannot
+see those; the check asks a calibrated model whether the two titles describe
+the same work and whether a word in one reverses the other, and moves a
+flagged title to \`ambiguous\` for review. It is not byte-deterministic (the
+probabilities are in \`_provenance.semantic_title\`), so leave it off when the
+user needs a reproducible verdict.
+
 ## When to use the LLM screen
 
 Pass \`screenWithLlm: true\` when the user explicitly cares about
@@ -120,10 +131,11 @@ Every response carries a \`_provenance\` block:
 
 | Field | Meaning |
 | --- | --- |
-| \`stages_run\` | Subset of \`["compare", "search", "llm_screen"]\` — which stages of the verifier actually executed. |
+| \`stages_run\` | Subset of \`["compare", "search", "llm_screen", "semantic_title"]\` — which stages of the verifier actually executed. |
 | \`resolved_via\` | The resolver service that returned the matched record (e.g. \`"crossref"\`, \`"pubmed"\`, \`"crossref-search"\`). |
 | \`registries_searched\` | Per-registry status block, present only when title-search ran. Each entry: \`{registry: "crossref"\\|"pubmed"\\|"openalex", ok, count, reason?}\`. |
 | \`llm_screen\` | Present only when \`screenWithLlm: true\` was requested. Carries \`applied: true\` plus the LLM's verdict / reasoning / cost, or \`applied: false\` plus a reason code (\`verdict_not_eligible\` / \`daily_budget_exceeded\` / \`no_gateway\` / \`upstream_error\` / \`malformed_response\`). |
+| \`semantic_title\` | Present only when \`semanticTitle: true\` was requested. \`applied: true\` plus \`same_work\` and \`polarity_flip\` probabilities (0–1), their thresholds and \`flagged\`; a flagged title moves \`matched\` → \`ambiguous / low\` with a caveat, never \`mismatch\`. \`applied: false\` plus a reason code (\`verdict_not_eligible\` / \`disabled\` / \`no_api_key\` / \`upstream_error\` / \`malformed_response\`) means the check did not run and the verdict stands. |
 | \`caveats\` | Point-of-use limitations of this verdict, each emitted only when deterministically true of the comparison: resolved via title-search (the supplied identifier did not resolve), an ISSN-only container identifier (verifies the journal, not a specific work), a non-Latin-script title (weaker character-level similarity), a publication-year gap, or a group author the record could not cross-check. Absent (not an empty array) on a clean high-confidence \`matched\`. Surface these to the user alongside the verdict. |
 
 Surface the provenance to the user when they ask "how did you decide?" or

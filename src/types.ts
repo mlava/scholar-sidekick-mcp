@@ -203,6 +203,12 @@ export const VerifyCitationInput = z.strictObject({
     .describe(
       "Opt-in Stage 3 LLM screen. Fires only when the pre-LLM verdict is mismatch with low confidence (the informal-abbreviation false-positive bucket). Gated: requires an authenticated first-party API key or a paid RapidAPI tier; anonymous / free callers receive 400 LLM_SCREEN_FORBIDDEN. Default false.",
     ),
+  semanticTitle: z
+    .boolean()
+    .optional()
+    .describe(
+      "Opt-in semantic title check (any tier, no key needed). On a string-level matched verdict, a calibrated model judges whether the claimed and resolved titles describe the same work and whether a word in one reverses the other; catches one-word swaps in long titles that string similarity misses. A flagged title moves matched → ambiguous (review), never mismatch. Not byte-deterministic — _provenance.semantic_title carries the probabilities. Default false.",
+    ),
 });
 
 // A single pre-parsed citation for the auditBibliography `claims[]` path.
@@ -318,6 +324,12 @@ export const AuditBibliographyInput = z.strictObject({
     .optional()
     .describe(
       "Opt-in Stage 3 LLM screen applied per entry (same gating as verifyCitation). Default false.",
+    ),
+  semanticTitle: z
+    .boolean()
+    .optional()
+    .describe(
+      "Opt-in semantic title check applied per entry (any tier; see verifyCitation). Default false.",
     ),
 });
 

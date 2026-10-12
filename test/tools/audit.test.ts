@@ -99,6 +99,30 @@ describe("auditBibliography tool", () => {
     expect(parsed.ok).toBeUndefined();
   });
 
+  it("forwards semanticTitle and screenWithLlm as options.semantic_title / screen_with_llm", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(AUDIT_BODY));
+
+    const { client } = await setup();
+    await client.callTool({
+      name: "auditBibliography",
+      arguments: {
+        bibliography: "@article{a, title={An invented title}, doi={10.1/x}}",
+        semanticTitle: true,
+        screenWithLlm: true,
+        checks: [],
+      },
+    });
+
+    const call = fetchMock.mock.calls[0]!;
+    expect(call[0]).toContain("/api/audit");
+    const body = JSON.parse(call[1]!.body as string);
+    expect(body.options).toEqual({
+      screen_with_llm: true,
+      semantic_title: true,
+      checks: [],
+    });
+  });
+
   it("appends the evidence-report next step as a SEPARATE content item", async () => {
     // The first item must stay machine-parseable, so the attribution cannot be
     // concatenated into it. This is the same shape formatCitation uses for its

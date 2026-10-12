@@ -13,10 +13,18 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function jsonResponse(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
+function jsonResponse(
+  body: unknown,
+  status = 200,
+  extra: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "x-request-id": "rid-ver", ...extra },
+    headers: {
+      "content-type": "application/json",
+      "x-request-id": "rid-ver",
+      ...extra,
+    },
   });
 }
 
@@ -27,9 +35,13 @@ async function setup() {
     timeoutMs: 5000,
     rapidApiKey: "test-key",
   });
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const [clientTransport, serverTransport] =
+    InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "0.0.1" });
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  await Promise.all([
+    server.connect(serverTransport),
+    client.connect(clientTransport),
+  ]);
   return { server, client };
 }
 
@@ -41,7 +53,8 @@ describe("verifyCitation tool", () => {
         verdict: "matched",
         confidence: "high",
         matched: {
-          title: "Fabricated citations: an audit across 2·5 million biomedical papers",
+          title:
+            "Fabricated citations: an audit across 2·5 million biomedical papers",
           authors: [{ family: "Topaz", given: "Maxim" }],
           issued: { year: 2026 },
         },
@@ -54,7 +67,8 @@ describe("verifyCitation tool", () => {
     const result = await client.callTool({
       name: "verifyCitation",
       arguments: {
-        title: "Fabricated citations: an audit across 2·5 million biomedical papers",
+        title:
+          "Fabricated citations: an audit across 2·5 million biomedical papers",
         doi: "10.1016/S0140-6736(26)00603-3",
         author: "Topaz",
         year: 2026,
@@ -81,13 +95,23 @@ describe("verifyCitation tool", () => {
         verdict: "mismatch",
         confidence: "high",
         matched: {
-          title: "ChatGPT in Research: Balancing Ethics, Transparency and Advancement",
+          title:
+            "ChatGPT in Research: Balancing Ethics, Transparency and Advancement",
           authors: [{ family: "Graf" }],
         },
         mismatches: [
-          { field: "title", claimed: "Microglial Modulation...", resolved: "ChatGPT in Research...", similarity: 0.12 },
+          {
+            field: "title",
+            claimed: "Microglial Modulation...",
+            resolved: "ChatGPT in Research...",
+            similarity: 0.12,
+          },
         ],
-        _provenance: { stages_run: ["compare", "search"], resolved_via: "crossref", registries_searched: [] },
+        _provenance: {
+          stages_run: ["compare", "search"],
+          resolved_via: "crossref",
+          registries_searched: [],
+        },
       }),
     );
 
@@ -135,6 +159,7 @@ describe("verifyCitation tool", () => {
         year: 2024,
         container: "Some Journal",
         screenWithLlm: true,
+        semanticTitle: true,
       },
     });
 
@@ -147,7 +172,10 @@ describe("verifyCitation tool", () => {
     expect(body.claimed.year).toBe(2024);
     expect(body.claimed.container).toBe("Some Journal");
     expect(body.claimed.authors).toEqual([{ family: "Doe" }]);
-    expect(body.options).toEqual({ screen_with_llm: true });
+    expect(body.options).toEqual({
+      screen_with_llm: true,
+      semantic_title: true,
+    });
 
     await client.close();
     await server.close();
@@ -222,9 +250,13 @@ describe("verifyCitation tool", () => {
       timeoutMs: 5000,
       // no rapidApiKey, no scholarApiKey → anonymous
     });
-    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
     const client = new Client({ name: "test", version: "0.0.1" });
-    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    await Promise.all([
+      server.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
 
     const result = await client.callTool({
       name: "verifyCitation",

@@ -8,7 +8,10 @@ import { verifyCitation } from "../client.js";
 import { VerifyCitationInput } from "../types.js";
 import { errorResult } from "./helpers.js";
 
-export function registerVerifyCitationTool(server: McpServer, config: ClientConfig): void {
+export function registerVerifyCitationTool(
+  server: McpServer,
+  config: ClientConfig,
+): void {
   server.registerTool(
     "verifyCitation",
     {
@@ -22,14 +25,17 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
         "title and the resolved title disagree. " +
         "Single citation per call. Required: `title` plus exactly one identifier (doi, pmid, pmcid, isbn, " +
         "arxiv, issn, ads, or whoIrisUrl). Optional refinements: author (first-author family name), year, " +
-        "container (journal). Set `screenWithLlm: true` to invoke the Stage 3 LLM screen on " +
+        "container (journal). Set `semanticTitle: true` (any tier) to add a semantic same-work check " +
+        "that catches one-word title swaps string similarity misses (a flagged match becomes " +
+        "'ambiguous' for review, never 'mismatch'; not byte-deterministic). " +
+        "Set `screenWithLlm: true` to invoke the Stage 3 LLM screen on " +
         "low-confidence mismatches (catches informal-abbreviation false positives); LLM access is gated " +
         "to authenticated first-party keys and paid RapidAPI tiers — anonymous callers get " +
         "400 LLM_SCREEN_FORBIDDEN. " +
         "Returns: { verdict: 'matched' | 'mismatch' | 'not_found' | 'ambiguous', confidence: 'high' | " +
         "'medium' | 'low', matched: <resolved record or null>, mismatches: [{field, claimed, resolved, " +
         "similarity}], candidates: [{item, registries, score}] (when title-search ran), _provenance: " +
-        "{stages_run, resolved_via, registries_searched, llm_screen} }. " +
+        "{stages_run, resolved_via, registries_searched, llm_screen, semantic_title} }. " +
         "Verdict semantics: 'matched' = claim agrees with resolved record; 'mismatch' = identifier " +
         "resolves but title does not match (Topaz fabrication pattern); 'ambiguous' = identifier " +
         "resolves to one paper but the claimed title matches a DIFFERENT paper found via title-search " +
@@ -54,6 +60,7 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
       // Bundle the flat MCP input into the API's `claimed` + `options` shape.
       const {
         screenWithLlm,
+        semanticTitle,
         author,
         title,
         doi,
@@ -83,9 +90,13 @@ export function registerVerifyCitationTool(server: McpServer, config: ClientConf
 
       const body: {
         claimed: Record<string, unknown>;
-        options?: { screen_with_llm?: boolean };
+        options?: { screen_with_llm?: boolean; semantic_title?: boolean };
       } = { claimed };
-      if (screenWithLlm) body.options = { screen_with_llm: true };
+      const options: { screen_with_llm?: boolean; semantic_title?: boolean } =
+        {};
+      if (screenWithLlm) options.screen_with_llm = true;
+      if (semanticTitle) options.semantic_title = true;
+      if (Object.keys(options).length) body.options = options;
 
       const result = await verifyCitation(config, body);
 

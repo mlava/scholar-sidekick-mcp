@@ -24,12 +24,12 @@
     "url": "https://github.com/mlava/scholar-sidekick-mcp",
     "source": "github"
   },
-  "version": "0.8.11",
+  "version": "0.8.12",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "scholar-sidekick-mcp",
-      "version": "0.8.11",
+      "version": "0.8.12",
       "transport": {
         "type": "stdio"
       }

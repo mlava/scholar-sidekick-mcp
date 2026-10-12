@@ -26,7 +26,7 @@ export interface ClientConfig {
 }
 
 /** Single source of truth for the client version (User-Agent + X-Scholar-Client). */
-export const CLIENT_VERSION = "0.8.11";
+export const CLIENT_VERSION = "0.8.12";
 
 const DEFAULT_RAPIDAPI_HOST = "scholar-sidekick.p.rapidapi.com";
 const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
@@ -36,7 +36,10 @@ const CANONICAL_BASE_URL = "https://scholar-sidekick.com";
  * Pasting a snippet unedited must NOT authenticate as a bogus key: that 401s every
  * call, while omitting the key entirely works fine on the anonymous tier.
  */
-const PLACEHOLDER_API_KEYS = new Set(["ssk_your-first-party-key", "ssk_your_key_here"]);
+const PLACEHOLDER_API_KEYS = new Set([
+  "ssk_your-first-party-key",
+  "ssk_your_key_here",
+]);
 
 function isPlaceholderApiKey(value: string): boolean {
   const normalised = value.trim().toLowerCase();
@@ -51,7 +54,8 @@ export function createConfig(): ClientConfig {
   const warnings: string[] = [];
 
   const rapidApiKey = process.env.RAPIDAPI_KEY?.trim() || undefined;
-  const rapidApiHost = process.env.RAPIDAPI_HOST?.trim() || DEFAULT_RAPIDAPI_HOST;
+  const rapidApiHost =
+    process.env.RAPIDAPI_HOST?.trim() || DEFAULT_RAPIDAPI_HOST;
   const urlOverride = process.env.SCHOLAR_SIDEKICK_URL?.trim() || undefined;
 
   let scholarApiKey = process.env.SCHOLAR_API_KEY?.trim() || undefined;
@@ -83,7 +87,8 @@ export function createConfig(): ClientConfig {
   // Base URL precedence: explicit override > RapidAPI gateway (only when a RapidAPI
   // key is set) > the canonical public site (anonymous / first-party `ssk_` path).
   const baseUrl = (
-    urlOverride || (rapidApiKey ? `https://${rapidApiHost}` : CANONICAL_BASE_URL)
+    urlOverride ||
+    (rapidApiKey ? `https://${rapidApiHost}` : CANONICAL_BASE_URL)
   ).replace(/\/$/, "");
 
   if (rapidApiKey && urlOverride) {
@@ -252,7 +257,11 @@ export async function verifyCitation(
   config: ClientConfig,
   input: {
     claimed: Record<string, unknown>;
-    options?: { screen_with_llm?: boolean; bypassCache?: boolean };
+    options?: {
+      screen_with_llm?: boolean;
+      semantic_title?: boolean;
+      bypassCache?: boolean;
+    };
   },
 ): Promise<ApiResult<VerifyApiResponse>> {
   return callApi<VerifyApiResponse>(config, "/api/verify", input);
@@ -264,7 +273,11 @@ export async function auditBibliography(
     bibliography?: string;
     format?: string;
     claims?: Array<Record<string, unknown>>;
-    options?: { screen_with_llm?: boolean; checks?: string[] };
+    options?: {
+      screen_with_llm?: boolean;
+      semantic_title?: boolean;
+      checks?: string[];
+    };
   },
 ): Promise<ApiResult<AuditApiResponse>> {
   return callApi<AuditApiResponse>(config, "/api/audit", input);
