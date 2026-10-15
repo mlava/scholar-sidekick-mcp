@@ -54,7 +54,9 @@ The server tolerates DOI URLs (`https://doi.org/...`), `PMID:` / `PMC` prefixes,
 
 `resolveIdentifier`, `formatCitation`, and `exportCitation` accept a single identifier or a comma- or newline-separated batch in the `text` parameter. If the user provides multiple identifiers, send them in one call rather than looping.
 
-`checkRetraction` and `checkOpenAccess` take one identifier per call (parameter is `id`, not `text`). For multiple papers, loop one call per identifier.
+`checkRetraction` and `checkOpenAccess` take one identifier per call (parameter is `id`, not `text`). For a few papers, loop one call per identifier.
+
+To check a **whole reference list** — "check all these citations", "check these for retractions", the end of a literature review — call `auditBibliography` once instead of looping. It runs the `verifyCitation` check plus a retraction lookup on every entry (up to 25 per call) and returns a per-entry verdict table with a summary. Pass BibTeX / RIS / CSL-JSON text as `bibliography`, or, for a plain pasted list, extract a title plus one identifier per reference into `claims`.
 
 `verifyCitation` also takes one citation per call, with its own shape: a required `title` plus exactly one identifier (`doi`, `pmid`, `pmcid`, `arxiv`, `isbn`, `issn`, `ads`, or `whoIrisUrl`), and optional `author`, `year`, and `container` to sharpen the verdict.
 
